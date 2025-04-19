@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=65", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "walkforward-bundle"
+version = "0.1.0"
+description = "Ensemble walk‑forward backtesting for systematic trading"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [{name = "Francesco Landolfi"}]
+dependencies = [
+    "pandas>=1.5",
+    "numpy>=1.23",
+    "numba>=0.59"
+]
