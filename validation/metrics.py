@@ -34,7 +34,8 @@ def compute_volatility(data, annualize=False, trading_days=252):
     if annualize:
         vol = vol * np.sqrt(trading_days)
     return vol
-compute_volatility.ascending = False  # Lower volatility is better
+# Lower volatility is better, so select using ascending order
+compute_volatility.ascending = True
 
 def compute_momentum(data, lookback=12):
     """
