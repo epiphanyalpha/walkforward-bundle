@@ -6,5 +6,6 @@
 
 ```bash
 pip install git+https://github.com/epiphanyalpha/walkforward-bundle.git
+```
 
 📓 [Run the demo notebook](examples/demo_runner.ipynb)
