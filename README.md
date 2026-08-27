@@ -1,7 +1,5 @@
 # walkforward-bundle
 
-[![tests](https://github.com/epiphanyalpha/walkforward-bundle/actions/workflows/tests.yml/badge.svg)](https://github.com/epiphanyalpha/walkforward-bundle/actions)
-
 **Try it in your browser — no install:**
 ### [→ Bundle Tester](https://claude.ai/code/artifact/b82e101f-1498-4164-8e89-0320f8fd6ce9)
 
