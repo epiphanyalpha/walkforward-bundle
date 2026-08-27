@@ -10,12 +10,16 @@ a Web Worker. Source in [`app/`](app/).
 **The write-up:** [`paper/walkforward_bundle.pdf`](paper/walkforward_bundle.pdf) —
 *The Walk-Forward Bundle: Specification-Curve Analysis for Trading-Strategy Validation.*
 
-![compact vs dispersed](docs/images/compact_vs_dispersed.png)
+![a tight bundle and a wide one, both rising](docs/images/compact_vs_dispersed.webp)
 
-*Left: a synthetic series with no edge in it — the fan opens up. Right: S&P 500,
-out-of-sample from 2000 — the same 432 constructions stay in a band. Deviation
-from the median construction, in multiples of that bundle's level, so the two
-are on a comparable scale.*
+*Same index, same 105 candidate rules, same 432 walk-forward constructions, two
+eras. Left, out-of-sample 1970-2000: every construction lands within a third of
+the median — the result is a property of the data. Right, out-of-sample
+2000-2026: the same method, two and a half times the spread — the result is
+mostly a property of choices nobody can justify. Both bundles are positive in
+100% of constructions, which is exactly why one curve tells you nothing. Each
+bundle is rescaled by one constant so its median construction ends at +100%:
+that is the only way two spreads are comparable.*
 
 ---
 
