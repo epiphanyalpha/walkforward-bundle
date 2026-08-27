@@ -4,14 +4,46 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "walkforward-bundle"
-version = "0.1.0"
-description = "Ensemble walk‑forward backtesting for systematic trading"
+version = "0.2.0"
+description = "Ensemble walk-forward backtesting for systematic trading"
 readme = "README.md"
 requires-python = ">=3.9"
 license = {text = "MIT"}
 authors = [{name = "Francesco Landolfi"}]
+keywords = ["backtesting", "walk-forward", "quantitative-finance", "overfitting", "numba"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Financial and Insurance Industry",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Office/Business :: Financial :: Investment",
+]
 dependencies = [
     "pandas>=1.5",
     "numpy>=1.23",
-    "numba>=0.59"
+    "numba>=0.59",
 ]
+
+[project.scripts]
+walkforward-demo = "validation.demo:main"
+
+[project.optional-dependencies]
+parallel = ["joblib>=1.2", "tqdm>=4.64"]
+analysis = ["scikit-learn>=1.1", "matplotlib>=3.5", "seaborn>=0.12"]
+umap = ["umap-learn>=0.5", "plotly>=5.0"]
+dev = ["pytest>=7.0", "pytest-cov"]
+all = [
+    "joblib>=1.2", "tqdm>=4.64",
+    "scikit-learn>=1.1", "matplotlib>=3.5", "seaborn>=0.12",
+]
+
+[project.urls]
+Homepage = "https://github.com/epiphanyalpha/walkforward-bundle"
+Repository = "https://github.com/epiphanyalpha/walkforward-bundle"
+
+[tool.setuptools.packages.find]
+include = ["validation*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]
