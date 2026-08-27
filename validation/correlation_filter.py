@@ -1,61 +1,68 @@
-# correlation_filter.py
+"""
+Greedy de-correlation of the in-sample shortlist.
+
+Naive implementation: for every candidate pair, walk both columns twice
+(means, then moments).  With a shortlist of ``k`` candidates that is
+``O(k^2 * T)`` full passes, and it recomputes the mean and variance of the
+*same* column dozens of times.
+
+Here every column is standardized once — ``(x - mean) / ||x - mean||`` — after
+which a Pearson correlation is a single dot product.  Same numbers (to fp
+tolerance), one pass over the data instead of ``k`` of them.
+"""
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
-import numba as nb
 
-@nb.njit(fastmath=True)
-def compute_correlation(col1, col2):
-    n = len(col1)
-    mean1 = 0.0
-    mean2 = 0.0
-    for i in range(n):
-        mean1 += col1[i]
-        mean2 += col2[i]
-    mean1 /= n
-    mean2 /= n
-    cov = 0.0
-    var1 = 0.0
-    var2 = 0.0
-    for i in range(n):
-        diff1 = col1[i] - mean1
-        diff2 = col2[i] - mean2
-        cov += diff1 * diff2
-        var1 += diff1 * diff1
-        var2 += diff2 * diff2
-    if var1 == 0.0 or var2 == 0.0:
-        return 0.0
-    return cov / (np.sqrt(var1 * var2))
+from .kernels import NUMBA_OK, greedy_uncorrelated as _greedy, standardize
 
-@nb.njit(fastmath=True)
-def get_uncorrelated_indices(selected_data, max_corr, max_columns):
-    n_columns = selected_data.shape[1]
-    selected_indices = [0]
-    for col in range(1, n_columns):
-        is_uncorrelated = True
-        for sel in selected_indices:
-            corr = compute_correlation(selected_data[:, sel], selected_data[:, col])
-            if corr >= max_corr:
-                is_uncorrelated = False
-                break
-        if is_uncorrelated:
-            selected_indices.append(col)
-        if len(selected_indices) >= max_columns:
-            break
-    return np.array(selected_indices)
+__all__ = [
+    "standardize_columns",
+    "get_uncorrelated_indices",
+    "CorrelationFilter",
+    "NUMBA_OK",
+]
+
+#: Retained under its historical name; the implementation is the shared kernel.
+standardize_columns = standardize
+
+
+def get_uncorrelated_indices(selected_data, max_corr, max_columns, use_abs=False):
+    """Greedy de-correlation over the columns of ``selected_data``.
+
+    Columns are assumed pre-sorted best-first: the first is always kept, and
+    each subsequent one survives only if its correlation with every kept
+    column is below ``max_corr``.
+
+    ``use_abs=False`` keeps the original semantics, under which a strongly
+    *negative* correlation counts as diversifying and is accepted. Pass
+    ``use_abs=True`` to reject on magnitude instead.
+    """
+    data = np.ascontiguousarray(selected_data)
+    if data.ndim != 2 or data.shape[0] == 0 or data.shape[1] == 0:
+        return np.empty(0, dtype=np.int64)
+    return _greedy(standardize(data), float(max_corr), int(max_columns), bool(use_abs))
+
 
 class CorrelationFilter:
-    def __init__(self, df: pd.DataFrame):
-        self.df = df
-        self.data = df.values
+    """Stage 2 of the selection: drop shortlisted candidates that duplicate risk."""
 
-    def filter(self, selected_columns: pd.Index, metric_values: np.ndarray, max_corr: float, max_columns: int):
-        """
-        From the initially selected columns, remove assets that are too correlated.
-        """
-        indices = self.df.columns.get_indexer(selected_columns)
+    def __init__(self, df, use_abs: bool = False):
+        self.df = df
+        self.data = np.asarray(df.values)
+        self.use_abs = use_abs
+
+    def filter(self, selected_columns, metric_values, max_corr, max_columns):
+        columns = self.df.columns
+        indices = columns.get_indexer(pd.Index(selected_columns))
+        indices = indices[indices >= 0]
+        if indices.size == 0:
+            return columns[:0], np.asarray(metric_values)[:0]
+
         selected_data = self.data[:, indices]
-        filtered_rel_indices = get_uncorrelated_indices(selected_data, max_corr, max_columns)
-        filtered_indices = indices[filtered_rel_indices]
-        filtered_columns = self.df.columns[filtered_indices]
-        filtered_metric_values = metric_values[filtered_rel_indices]
-        return filtered_columns, filtered_metric_values
+        rel = get_uncorrelated_indices(
+            selected_data, max_corr, max_columns, use_abs=self.use_abs
+        )
+        filtered_indices = indices[rel]
+        return columns[filtered_indices], np.asarray(metric_values)[rel]

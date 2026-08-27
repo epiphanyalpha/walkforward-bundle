@@ -1,0 +1,515 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=2.6cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=black,urlcolor=NavyBlue]{hyperref}
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage{titlesec}
+\usepackage{abstract}
+\usepackage{enumitem}
+\usepackage{microtype}
+
+\captionsetup{font=small,labelfont=bf,width=.95\textwidth}
+\titleformat{\section}{\normalfont\large\bfseries}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\normalfont\normalsize\bfseries}{\thesubsection}{0.7em}{}
+\setlength{\parskip}{0.35em}
+\setlength{\parindent}{0pt}
+\renewcommand{\abstractnamefont}{\normalfont\bfseries\small}
+\renewcommand{\abstracttextfont}{\normalfont\small}
+
+\title{\vspace{-1.2cm}\bfseries The Walk-Forward Bundle:\\[2pt]
+\large Specification-Curve Analysis for Trading-Strategy Validation}
+
+\author{Francesco Landolfi\\[2pt]
+\small Epiphany Alpha\\
+\small \texttt{francesco.landolfi@epiphany-alpha.com}}
+
+\date{\small August 2026 \quad$\cdot$\quad Working paper, not peer reviewed}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent A walk-forward back-test is widely treated as the honest form of
+historical evaluation: parameters are fitted on a past window and evaluated on
+the window that follows, so no future information enters the fit. We argue that
+this discipline, while necessary, is not sufficient. The procedure itself
+requires a set of construction choices --- in-sample window length, re-selection
+cadence, ranking objective, correlation cap --- for which no principled answer
+exists, and each choice yields a different out-of-sample equity curve. Reporting
+one such curve constitutes an unreported search over construction space.
+
+We propose reporting the \emph{bundle}: run the full grid of defensible
+walk-forward constructions, retain every out-of-sample path, and report the
+resulting distribution rather than any element of it. This is the
+multiverse-analysis and specification-curve methodology of the empirical
+social sciences, transposed to strategy validation.
+
+We demonstrate the procedure on two datasets processed identically. On a
+synthetic price series containing no edge by construction, the median of 432
+walk-forward constructions is an annualized out-of-sample Sharpe of $-0.27$,
+while the best is $+0.18$ --- a number that, reported alone, would be
+indistinguishable from a discovery. On S\&P~500 daily data evaluated
+out-of-sample from 2000, the same 432 constructions give a median of $+0.33$
+with every construction positive and a dispersion roughly half as wide. The
+diagnostic is not the level but the shape: the gap between the best
+construction and the median falls from $0.45$ to $0.10$. We also report the
+computational work required to make exhaustive evaluation cheap enough to be
+routine, in which a per-window memoization of the ranking metric accounted for
+essentially all of a $3.8\times$ speedup. A reference implementation is released
+under the MIT licence.
+\end{abstract}
+
+\vspace{0.4em}
+
+\section{The construction problem}
+
+Consider a researcher with a family of candidate strategies --- parameter
+variants of one model, several models, or one model across several assets ---
+and a walk-forward protocol for selecting among them. On each pass, candidates
+are ranked on an in-sample window, a subset is retained, and that subset is
+traded over the period immediately following. The out-of-sample legs are
+concatenated into a single track record.
+
+Nothing in that description is unsound. The resulting equity curve contains no
+look-ahead: the selection at each fold uses only data preceding the period it
+is judged on. This is a real improvement over a single in-sample optimisation
+and is standard practice.
+
+The difficulty lies one level above. Before the protocol can be run, the
+researcher must fix:
+
+\begin{itemize}[leftmargin=1.3em,itemsep=1pt,topsep=3pt]
+  \item the in-sample window length --- 12 months? 24? 48?
+  \item whether that window expands from a fixed origin or rolls;
+  \item the re-selection cadence, which also fixes the length of each
+        out-of-sample leg;
+  \item the objective on which candidates are ranked --- Sharpe, Calmar,
+        Sortino, total return;
+  \item how many candidates are retained, and how correlated they may be.
+\end{itemize}
+
+These are not nuisance parameters with known correct values. They are choices,
+and each combination produces a different out-of-sample curve. When a single
+curve is reported, a search over construction space has taken place and has not
+been disclosed --- typically not even to the researcher, who experienced the
+process as a sequence of reasonable decisions rather than as an optimisation.
+The out-of-sample discipline internal to each run offers no protection, because
+the selection that matters occurred above it.
+
+This is precisely the structure Gelman and Loken termed the garden of forking
+paths \cite{gelman2013}, and the response developed in the empirical social
+sciences after the replication crisis is instructive: rather than defend one
+specification, report all of them. Steegen et al.\ \cite{steegen2016} call this
+a multiverse analysis; Simonsohn et al.\ \cite{simonsohn2020} formalise the
+reporting as a specification curve. In finance the closely related concern ---
+that the reported performance of a strategy reflects the number of trials that
+produced it --- is treated by White's reality check \cite{white2000}, by the
+multiple-testing haircut of Harvey et al.\ \cite{harvey2016}, and by the
+backtest-overfitting programme of Bailey et al.\
+\cite{bailey2014,bailey2015}. Our contribution is neither a new statistic nor a
+new correction. It is the observation that the walk-forward protocol has its own
+multiverse, that this multiverse is small enough to enumerate exhaustively, and
+that its shape is directly interpretable.
+
+\section{Method}
+
+\subsection{Setup}
+
+Let $R \in \mathbb{R}^{T \times k}$ be a matrix of candidate return streams,
+column $j$ being the realised P\&L of candidate $j$ at time $t$, and let
+$V \in \mathbb{R}^{T \times k}$ be the corresponding traded notional
+(turnover). We require that $R$ be \emph{causal}: each column must be the
+output of a rule whose parameters were not fitted using data after $t$. Nothing
+downstream can repair a violation of this requirement.
+
+A construction $c$ is a tuple
+\[
+c = \big(L,\; s,\; a,\; m,\; n,\; \rho,\; K\big),
+\]
+with $L$ the in-sample window length in months, $s$ the re-selection cadence
+(equal to the out-of-sample leg length), $a \in \{\text{expanding},
+\text{rolling}\}$, $m$ the ranking objective, $n$ the shortlist size, $\rho$ the
+correlation cap and $K$ the maximum number of candidates deployed.
+
+\subsection{One construction}
+
+Given a first out-of-sample date $t_0$, the schedule generates windows
+$[\,u_i, v_i\,]$ with $v_i = t_0 + i\cdot s$ and $u_i = v_0 - L$ when $a$ is
+expanding, $u_i = v_i - L$ when rolling. The schedule terminates $s$ months
+before the end of the sample, so that every selection is followed by a period
+on which it can be judged.
+
+For each window, in order:
+
+\begin{enumerate}[leftmargin=1.5em,itemsep=1pt,topsep=3pt]
+  \item \textbf{Rank.} Evaluate $m$ on $R[u_i{:}v_i]$ column-wise and retain the
+        best $n$ candidates.
+  \item \textbf{De-correlate.} Traverse the shortlist best-first, admitting a
+        candidate only if its correlation with every already-admitted candidate
+        is below $\rho$; stop at $K$ admissions. This is deliberately greedy and
+        deterministic: explicability matters more than optimality when the
+        object of the exercise is a robustness claim.
+  \item \textbf{Gate on economics (optional).} Discard candidates whose realised
+        P\&L per unit of turnover, $\sum_t R_{tj} / \sum_t V_{tj}$, falls below
+        a floor. This is the quantity that must exceed transaction cost.
+  \item \textbf{Evaluate.} Equal-weight the survivors over
+        $(v_i, \, v_i + s]$ and record the resulting return and turnover series.
+\end{enumerate}
+
+The out-of-sample leg begins strictly after the in-sample window closes; the two
+never share an observation. Concatenating the legs yields a single continuous
+out-of-sample return stream $r^{(c)}$, from which we compute an annualized
+Sharpe ratio $\widehat{S}(c)$.
+
+\subsection{The bundle}
+
+Let $\mathcal{C}$ be the Cartesian product of the admissible values of each
+construction parameter. The object we report is the collection
+\[
+\mathcal{B} \;=\; \big\{\, r^{(c)} \;:\; c \in \mathcal{C} \,\big\},
+\]
+together with the induced distribution of $\widehat{S}(c)$ over $\mathcal{C}$.
+The summary statistics of interest are the median, the dispersion, the fraction
+of constructions with positive out-of-sample Sharpe, and --- the quantity we
+find most diagnostic --- the gap
+\[
+\Delta \;=\; \max_{c \in \mathcal{C}} \widehat{S}(c) \;-\;
+              \operatorname{med}_{c \in \mathcal{C}} \widehat{S}(c),
+\]
+which measures how much apparent performance is available to a researcher who
+selects a construction after seeing the results.
+
+A grid should span choices the researcher genuinely cannot rule out, and no
+others. Adding axes on which one has no opinion inflates $|\mathcal{C}|$ without
+adding information; adding axes on which one setting is known to be wrong
+imports a known-bad configuration into the reported distribution.
+
+\section{Two experiments}
+
+Both experiments use an identical pipeline: a sweep of $105$ trend-following
+rules (Donchian breakout, exponential-moving-average crossover, and time-series
+momentum, across six fast and six slow look-backs), volatility-targeted, charged
+2 basis points per unit of traded notional, executed one bar after signal. The
+construction grid is
+$L \in \{12,24,36,48\}$, $s \in \{3,6,12\}$, $a \in \{\text{expanding},
+\text{rolling}\}$, $m \in \{\text{Sharpe}, \text{Calmar}, \text{Sortino}\}$,
+$\rho \in \{0.3,0.5,0.7\}$, $K \in \{5,10\}$, with $n = 20$ throughout ---
+$|\mathcal{C}| = 432$.
+
+\subsection{A synthetic null}
+
+The first price series is generated: a volatility-clustering, fat-tailed process
+with constant drift. It has the texture of a market --- long quiet stretches
+punctuated by violent moves, so trend rules behave as they do on real data ---
+and, by construction, contains nothing a look-back rule can predict. The
+individual candidates have a median annualized Sharpe of $-0.09$: after costs,
+the family loses money, as it should.
+
+Figure~\ref{fig:syn} shows all 432 out-of-sample paths. The median construction
+returns an annualized out-of-sample Sharpe of $-0.27$ and only $5\%$ of
+constructions end positive. The best returns $+0.18$.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{fig/fig1_synthetic.pdf}
+\caption{All 432 walk-forward constructions on the synthetic null. Each faint
+line is one construction's concatenated out-of-sample return stream. Every line
+is a genuine walk-forward result: fitted on a past window, traded on the window
+after it, no look-ahead. The data contains no edge.}
+\label{fig:syn}
+\end{figure}
+
+That $+0.18$ deserves emphasis. It is arithmetically correct, strictly
+out-of-sample, produced by a defensible construction, and entirely an artefact
+of having tried 432 of them on data engineered to contain nothing. A researcher
+who ran this grid, selected the best construction and reported its curve would
+not be committing fraud; they would be doing what the field's reporting
+conventions permit.
+
+\subsection{S\&P 500}
+
+The second series is the S\&P~500 daily index from 1927, with the first
+out-of-sample date set to January 2000. The same 105 rules and the same 432
+constructions are applied without modification. Individual candidates have a
+median annualized Sharpe of $0.45$.
+
+\begin{table}[t]
+\centering
+\small
+\caption{The bundle on both datasets. Annualized out-of-sample Sharpe over 432
+walk-forward constructions.}
+\label{tab:main}
+\begin{tabular}{lrr}
+\toprule
+& \textbf{Synthetic} & \textbf{S\&P 500} \\
+\midrule
+Median                                   & $-0.27$ & $+0.33$ \\
+Minimum                                  & $-0.79$ & $+0.06$ \\
+Maximum                                  & $+0.18$ & $+0.43$ \\
+Dispersion (s.d.)                        & $0.16$  & $0.09$  \\
+Constructions with $\widehat{S} > 0$     & $5\%$   & $100\%$ \\
+$\Delta$ (best $-$ median)               & $0.45$  & $0.10$  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{fig/fig2_comparison.pdf}
+\caption{The same procedure on both datasets. (a) The synthetic null: a wide
+fan, mostly below zero. (b) S\&P~500 out-of-sample from 2000: a tight bundle,
+entirely above zero. The vertical scales differ; the comparison of interest is
+the width of each fan relative to its own level, quantified in
+Table~\ref{tab:main}.}
+\label{fig:cmp}
+\end{figure}
+
+\subsection{What separates them}
+
+A median out-of-sample Sharpe of $0.33$ for plain trend following on an equity
+index is unremarkable, and should be: it is approximately the modest,
+well-documented figure the literature would lead one to expect. The level is not
+the finding.
+
+The finding is the shape. Dispersion falls from $0.16$ to $0.09$. The fraction
+of positive constructions rises from $5\%$ to $100\%$. And $\Delta$ falls from
+$0.45$ to $0.10$: on the synthetic null, choosing the best construction after
+the fact buys $0.45$ of Sharpe that does not exist, whereas on the S\&P it buys
+$0.10$, because there is far less to choose \emph{between}.
+
+Figure~\ref{fig:disp} shows the two distributions directly. This is the
+specification curve of \cite{simonsohn2020} in histogram form, and it is what we
+propose reporting in place of a single equity curve.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{fig/fig3_dispersion.pdf}
+\caption{Distribution of annualized out-of-sample Sharpe across the 432
+constructions, one observation per construction. Dashed lines mark the medians.
+The separation between the two distributions --- in location, in width, and in
+support --- is the diagnostic.}
+\label{fig:disp}
+\end{figure}
+
+\subsection{A caveat on reading the fans directly}
+
+Figure~\ref{fig:cmp} is drawn in cumulative-return space, where the visual
+width of a fan is not a measure of construction sensitivity. The S\&P bundle is
+in fact \emph{wider} in raw terms --- the 10--90\% band spans $65.6$ percentage
+points at the terminal date against $50.2$ for the synthetic null --- simply
+because it is compounding a positive return. Sensitivity is a ratio, not a
+distance.
+
+Figure~\ref{fig:band} therefore plots each path as a deviation from its
+bundle's median path, expressed in multiples of that bundle's median terminal
+level. On that scale the terminal 10--90\% band is $1.55\times$ the level for
+the synthetic null and $0.78\times$ for the S\&P: twice as tight. This is the
+representation we recommend for visual reporting, and it agrees with the
+Sharpe dispersion in Table~\ref{tab:main}, as it must.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{fig/fig4_dispersion_band.pdf}
+\caption{Construction sensitivity on a common scale. Each faint line is one
+construction's deviation from the median construction, divided by the bundle's
+median terminal level. Shaded bands are the inter-decile and inter-quartile
+ranges. A wide fan (a) means the reported result depends on which construction
+was chosen; a tight one (b) means it does not.}
+\label{fig:band}
+\end{figure}
+
+\subsection{How large must the grid be?}
+
+If reporting a distribution over constructions is the remedy, the choice of
+which constructions to enumerate is itself a researcher degree of freedom, and
+the objection of infinite regress is fair. It does not, however, bite in
+practice, for three reasons.
+
+First, the axes are the protocol's own parameters, not the model's. They are
+few, they are enumerable, and each admits a handful of defensible values ---
+unlike a model's parameter space, which is unbounded.
+
+Second, the response surface over those axes is smooth. Inserting a fifth
+in-sample window length between 24 and 36 months tells one almost nothing that
+24 and 36 did not.
+
+Third, and decisively, the required grid size is an empirical question with a
+measurable answer. Table~\ref{tab:conv} reports the accuracy with which a
+random subgrid of size $n$ recovers the median of the full 432-point grid.
+
+\begin{table}[h]
+\centering\small
+\caption{Mean absolute error in the estimated grid median, over 4{,}000 random
+subgrids of each size, against the full 432-point grid.}
+\label{tab:conv}
+\begin{tabular}{rrr}
+\toprule
+Subgrid size $n$ & Synthetic & S\&P 500 \\
+\midrule
+  5 & 0.066 & 0.054 \\
+ 10 & 0.045 & 0.040 \\
+ 20 & 0.032 & 0.034 \\
+ 50 & 0.020 & 0.025 \\
+100 & 0.013 & 0.019 \\
+200 & 0.007 & 0.013 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The grid needs to be large enough that the estimation error is small relative
+to the effect being examined, and no larger. The difference under test here ---
+a median of $+0.33$ against $-0.27$, a gap of $0.60$ --- is roughly eighteen
+times the estimation error at $n = 20$. Enumerating all 432 buys precision that
+the decision does not consume. We report the full grid because it is cheap
+(Section~5), not because the conclusion requires it.
+
+The regress terminates, then, not because the grid choice is objective, but
+because it is \emph{declared}. A single curve conceals its search; a bundle
+reported with its grid exposes the remaining discretion to the reader, who can
+object to a specific omitted axis. That is a weaker guarantee than objectivity
+and a much stronger one than convention.
+
+\subsection{Marginal effects}
+
+Because the grid is exhaustive, the marginal effect of each construction choice
+is available by conditioning. On the S\&P data three of the four principal axes
+are flat: median Sharpe varies by less than $0.01$ across in-sample window
+lengths ($0.324$--$0.332$) and by $0.01$ across ranking objectives.
+
+One axis is not flat. Rolling windows give a median of $0.23$; expanding windows
+give $0.38$. A researcher who adopted an expanding window as a default, reported
+the curve and never swept the alternative would have taken an unmeasured $0.15$
+Sharpe difference on the strength of an unexamined convention. Notably, the same
+axis has the opposite and much weaker sign on the synthetic null ($-0.25$ versus
+$-0.30$), which is what one expects of an effect that interacts with the
+presence of real signal rather than reflecting a universal preference.
+
+This is the practical case for the bundle, independent of the epistemic one: it
+converts every unexamined default into a measurement.
+
+\section{Making exhaustive evaluation cheap}
+
+Exhaustive enumeration is a methodological prescription only if the enumeration
+is affordable. We report the optimisation work because its lesson generalises
+and because the naive result was misleading.
+
+The workload has an unusual structure: it is \emph{redundant} before it is
+\emph{parallel}. Every construction traverses the same candidate matrix, and
+constructions differing only in $\rho$ or $K$ produce identical in-sample
+rankings, since those parameters act after the ranking.
+
+Instrumented timings on a grid of 576 constructions over a $5000 \times 1000$
+candidate matrix attributed $82.9\%$ of runtime to a single operation: the
+in-sample ranking objective, recomputed over the full window slice once per
+window per construction. Out-of-sample leg assembly accounted for $10.0\%$,
+greedy de-correlation for $2.9\%$, and slicing for $1.2\%$. By Amdahl's law
+\cite{amdahl1967}, no amount of work on the remaining $17.1\%$ could have
+produced more than a $1.2\times$ speedup --- a ceiling we established only after
+implementing two optimisations that fell below it.
+
+The effective change was a memoization of the ranking objective keyed on
+$(\text{objective}, \text{window})$, shared across constructions within a
+process. On the benchmark grid this reduced $5{,}952$ evaluations to $656$, and
+the predicted and observed runtimes agree closely:
+\[
+45.3\,\text{s} \times \left(0.171 + \tfrac{0.829}{9.1}\right) = 11.9\,\text{s}
+\quad\text{predicted},\qquad 12.0\,\text{s}\ \text{measured}.
+\]
+
+Two results are worth recording for practitioners. First, a closed-form
+prefix-sum evaluation of moment-based objectives --- asymptotically the
+strongest optimisation available, reducing per-window cost from $O(Tk)$ to
+$O(k)$ --- yielded no measurable gain on a wide grid, because the memoization
+had already eliminated the repetition it exploits; it returns a $1.5\times$
+gain only in the regime where each schedule appears once. Second, the obvious
+parallelisation, dispatching one construction per worker, was $5.9\times$
+\emph{slower} than serial execution: each task shipped a fresh copy of the
+candidate matrix and began with an empty cache, so the eliminated work returned,
+multiplied by the number of tasks. Grouping constructions that share a schedule
+into the same task restores the gain. Parallelism that destroys locality is a
+regression.
+
+\section{Limitations}
+
+The procedure inherits the causality of its inputs and cannot verify it. If a
+candidate's P\&L was generated by a rule fitted on the full history, every
+number reported here is contaminated regardless of the walk-forward discipline
+applied on top.
+
+A tight bundle establishes insensitivity to construction choice. It does not
+establish that the edge will persist, that the candidate universe was not itself
+the product of an unreported search, or that the strategy is implementable at
+size. It answers one question well and is silent on the others.
+
+The dispersion of $\widehat{S}$ over $\mathcal{C}$ is not a sampling
+distribution and admits no direct frequentist interpretation; constructions
+share data and are strongly dependent. We report it as a descriptive summary of
+sensitivity, not as an interval estimate. Formal inference over specification
+spaces --- as developed in \cite{simonsohn2020} --- is compatible with this
+procedure but is not attempted here.
+
+Finally, the grid is a modelling choice like any other, and a researcher
+determined to produce a tight bundle can do so by narrowing it. The grid must be
+reported in full alongside the result, and we regard a bundle reported without
+its grid as no more informative than a single curve.
+
+\section{Availability}
+
+A reference implementation is released under the MIT licence at
+\begin{center}\small\url{https://github.com/epiphanyalpha/walkforward-bundle}\end{center}
+\vspace{-0.4em}
+Both experiments in this paper reproduce from a single command, with no data
+download:
+
+\begin{quote}\small\ttfamily
+pip install walkforward-bundle\\
+python -m validation.demo
+\end{quote}
+
+The synthetic series is generated deterministically from a fixed seed; the
+S\&P~500 results are reproduced by passing a daily close series via
+\texttt{-{}-csv}. No market data is redistributed with the package.
+
+\begin{thebibliography}{9}\small
+
+\bibitem{amdahl1967} Amdahl, G.~M. (1967). Validity of the single processor
+approach to achieving large scale computing capabilities.
+\emph{AFIPS Conference Proceedings}, 30, 483--485.
+
+\bibitem{bailey2014} Bailey, D.~H., \& López de Prado, M. (2014). The Deflated
+Sharpe Ratio: Correcting for Selection Bias, Backtest Overfitting and
+Non-Normality. \emph{Journal of Portfolio Management}, 40(5), 94--107.
+
+\bibitem{bailey2015} Bailey, D.~H., Borwein, J.~M., López de Prado, M., \&
+Zhu, Q.~J. (2015). The Probability of Backtest Overfitting. Working paper,
+revised February 2015.
+
+\bibitem{gelman2013} Gelman, A., \& Loken, E. (2013). The garden of forking
+paths: Why multiple comparisons can be a problem, even when there is no
+``fishing expedition''. Working paper, Department of Statistics, Columbia
+University.
+
+\bibitem{harvey2016} Harvey, C.~R., Liu, Y., \& Zhu, H. (2016). $\ldots$ and the
+Cross-Section of Expected Returns. \emph{Review of Financial Studies}, 29(1),
+5--68.
+
+\bibitem{simonsohn2020} Simonsohn, U., Simmons, J.~P., \& Nelson, L.~D. (2020).
+Specification curve analysis. \emph{Nature Human Behaviour}, 4, 1208--1214.
+
+\bibitem{steegen2016} Steegen, S., Tuerlinckx, F., Gelman, A., \& Vanpaemel, W.
+(2016). Increasing Transparency Through a Multiverse Analysis.
+\emph{Perspectives on Psychological Science}, 11(5), 702--712.
+
+\bibitem{white2000} White, H. (2000). A Reality Check for Data Snooping.
+\emph{Econometrica}, 68(5), 1097--1126.
+
+\end{thebibliography}
+
+\end{document}
