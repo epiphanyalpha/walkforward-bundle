@@ -1,11 +1,12 @@
 # walkforward-bundle
 
 **Try it in your browser — no install:**
-### [→ Bundle Tester](https://claude.ai/code/artifact/b82e101f-1498-4164-8e89-0320f8fd6ce9)
+### [→ Bundle Tester](https://epiphanyalpha.github.io/walkforward-bundle/)
 
 Drop in a price CSV, run every defensible walk-forward construction, and see
-whether the bundle stays tight. Nothing is uploaded: the engine runs locally in
-a Web Worker. Source in [`app/`](app/).
+whether the bundle stays tight. Nothing is uploaded and nothing is stored: the
+engine runs in a Web Worker in your own tab, and the page is a single static
+file. Source: [`index.html`](index.html).
 
 **The write-up:** [`paper/walkforward_bundle.pdf`](paper/walkforward_bundle.pdf) —
 *The Walk-Forward Bundle: Specification-Curve Analysis for Trading-Strategy Validation.*
