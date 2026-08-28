@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="it">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bundle Tester — walk-forward multiverse</title>
-<meta name="description" content="Esegui ogni walk-forward difendibile sulla tua serie di prezzi e guarda quanto stretto resta il fascio. Il calcolo gira nel tuo browser: nessun dato viene caricato.">
+<meta name="description" content="Run every defensible walk-forward construction on your own price series and see how tight the bundle stays. The computation runs in your browser: nothing is uploaded.">
 <meta property="og:title" content="Bundle Tester — walk-forward multiverse">
-<meta property="og:description" content="Ogni walk-forward dipende da scelte che nessuno sa giustificare. Eseguile tutte e guarda quanto stretto resta il fascio.">
+<meta property="og:description" content="Every walk-forward depends on choices nobody can justify. Run all of them and see how tight the bundle stays.">
 <meta property="og:type" content="website">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -196,36 +196,36 @@ tbody tr:hover td{background:var(--surface-2)}
 
 <div class="topbar">
   <div class="brand"><b>Bundle Tester</b><span>WALK-FORWARD MULTIVERSE</span></div>
-  <div class="tag">Ogni walk-forward dipende da scelte che nessuno sa giustificare. Eseguile tutte e guarda quanto stretto resta il fascio.</div>
+  <div class="tag">Every walk-forward depends on choices nobody can justify. Run all of them and see how tight the bundle stays.</div>
 </div>
 
 <div class="shell">
   <!-- ------------------------------------------------ controls -->
   <aside class="rail">
     <div class="grp">
-      <label>1 &middot; Dati</label>
-      <div class="seg" role="group" aria-label="Sorgente dati">
-        <button class="chip" id="srcDemo" aria-pressed="true">serie dimostrativa</button>
-        <button class="chip" id="srcCsv" aria-pressed="false">il mio CSV</button>
+      <label>1 &middot; Data</label>
+      <div class="seg" role="group" aria-label="Data source">
+        <button class="chip" id="srcDemo" aria-pressed="true">demo series</button>
+        <button class="chip" id="srcCsv" aria-pressed="false">my CSV</button>
       </div>
       <div class="file" id="drop">
         <input type="file" id="fileInput" accept=".csv,.txt">
-        <b>Trascina un CSV</b>
-        <span>una colonna data, una colonna prezzo di chiusura</span>
+        <b>Drop a CSV here</b>
+        <span>one date column, one closing price column</span>
       </div>
-      <div class="datainfo" id="dataInfo">Serie sintetica: 9.000 barre, nessun edge dentro, per costruzione.</div>
+      <div class="datainfo" id="dataInfo">Synthetic series: 9,000 bars, no edge in it, by construction.</div>
     </div>
 
     <div class="grp">
-      <label>2 &middot; Primo out-of-sample</label>
+      <label>2 &middot; First out-of-sample</label>
       <input type="date" id="firstOS" style="width:100%;padding:7px 9px;border:1px solid var(--line-2);
              border-radius:4px;background:var(--surface);color:var(--text);font-family:var(--f-mono);font-size:12.5px">
     </div>
 
     <div class="grp">
-      <label>3 &middot; La griglia</label>
+      <label>3 &middot; The grid</label>
 
-      <div class="lbl" style="margin-top:2px">Finestra in-sample (mesi)</div>
+      <div class="lbl" style="margin-top:2px">In-sample window (months)</div>
       <div class="seg" data-multi="Ls">
         <button class="chip" data-v="12" aria-pressed="true">12</button>
         <button class="chip" data-v="24" aria-pressed="true">24</button>
@@ -233,20 +233,20 @@ tbody tr:hover td{background:var(--surface-2)}
         <button class="chip" data-v="48" aria-pressed="true">48</button>
       </div>
 
-      <div class="lbl">Cadenza di riselezione (mesi)</div>
+      <div class="lbl">Re-selection cadence (months)</div>
       <div class="seg" data-multi="steps">
         <button class="chip" data-v="3" aria-pressed="true">3</button>
         <button class="chip" data-v="6" aria-pressed="true">6</button>
         <button class="chip" data-v="12" aria-pressed="true">12</button>
       </div>
 
-      <div class="lbl">Tipo di finestra</div>
+      <div class="lbl">Window type</div>
       <div class="seg" data-multi="anchors">
-        <button class="chip" data-v="1" aria-pressed="true">espansiva</button>
+        <button class="chip" data-v="1" aria-pressed="true">anchored</button>
         <button class="chip" data-v="0" aria-pressed="true">rolling</button>
       </div>
 
-      <div class="lbl">Metrica di ranking</div>
+      <div class="lbl">Ranking metric</div>
       <div class="seg" data-multi="metrics">
         <button class="chip" data-v="sharpe" aria-pressed="true">sharpe</button>
         <button class="chip" data-v="sortino" aria-pressed="true">sortino</button>
@@ -256,14 +256,14 @@ tbody tr:hover td{background:var(--surface-2)}
         <button class="chip" data-v="max_drawdown" aria-pressed="false">max drawdown</button>
       </div>
 
-      <div class="lbl">Tetto di correlazione</div>
+      <div class="lbl">Correlation cap</div>
       <div class="seg" data-multi="corrs">
         <button class="chip" data-v="0.3" aria-pressed="true">0.3</button>
         <button class="chip" data-v="0.5" aria-pressed="true">0.5</button>
         <button class="chip" data-v="0.7" aria-pressed="true">0.7</button>
       </div>
 
-      <div class="lbl">Quanti ne schiero</div>
+      <div class="lbl">How many to hold</div>
       <div class="seg" data-multi="colsList">
         <button class="chip" data-v="3" aria-pressed="false">3</button>
         <button class="chip" data-v="5" aria-pressed="true">5</button>
@@ -272,7 +272,7 @@ tbody tr:hover td{background:var(--surface-2)}
     </div>
 
     <div class="grp">
-      <label>4 &middot; Costi</label>
+      <label>4 &middot; Costs</label>
       <div class="seg" data-single="costBps">
         <button class="chip" data-v="0" aria-pressed="false">0 bp</button>
         <button class="chip" data-v="2" aria-pressed="true">2 bp</button>
@@ -282,8 +282,8 @@ tbody tr:hover td{background:var(--surface-2)}
     </div>
 
     <div class="grp">
-      <div class="gridsize">costruzioni da eseguire: <b id="gridSize">432</b></div>
-      <button class="run" id="runBtn">Esegui il bundle</button>
+      <div class="gridsize">constructions to run: <b id="gridSize">432</b></div>
+      <button class="run" id="runBtn">Run the bundle</button>
       <div class="prog hidden" id="prog"><div class="pbar" id="pbar"></div></div>
       <div class="gridsize" id="stageMsg"></div>
     </div>
@@ -292,9 +292,9 @@ tbody tr:hover td{background:var(--surface-2)}
   <!-- ------------------------------------------------ results -->
   <main class="stage">
     <div class="empty" id="empty">
-      <h2>Nessun risultato ancora</h2>
-      <p>La serie dimostrativa è generata senza alcun edge dentro, per costruzione. Eseguila e guarda la forma che prende il fascio: è quella il metro di paragone.</p>
-      <p class="hint">poi carica una tua serie di prezzi e confronta</p>
+      <h2>No results yet</h2>
+      <p>The demo series is generated with no edge in it, by construction. Run it and look at the shape the bundle takes: that shape is the benchmark.</p>
+      <p class="hint">then load your own price series and compare</p>
     </div>
 
     <div id="results" class="hidden">
@@ -307,47 +307,47 @@ tbody tr:hover td{background:var(--surface-2)}
 
       <div class="card">
         <div class="card-h">
-          <h3>Il fascio</h3>
+          <h3>The bundle</h3>
           <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
             <div class="legend">
-              <span><i style="background:var(--mass);height:3px"></i>tutte</span>
-              <span><i style="background:var(--blue)"></i>mediana</span>
-              <span><i style="background:var(--orange)"></i>migliore</span>
+              <span><i style="background:var(--mass);height:3px"></i>all</span>
+              <span><i style="background:var(--blue)"></i>median</span>
+              <span><i style="background:var(--orange)"></i>best</span>
             </div>
-            <button class="mini" id="viewToggle">vista: rendimento</button>
+            <button class="mini" id="viewToggle">view: return</button>
           </div>
         </div>
         <div class="card-b"><canvas id="fan"></canvas></div>
       </div>
 
       <div class="card">
-        <div class="card-h"><h3>Distribuzione dello Sharpe out-of-sample</h3>
-          <span class="sub">una osservazione per costruzione</span></div>
+        <div class="card-h"><h3>Out-of-sample Sharpe distribution</h3>
+          <span class="sub">one observation per construction</span></div>
         <div class="card-b"><canvas id="hist"></canvas></div>
       </div>
 
       <div class="card">
-        <div class="card-h"><h3>Quale scelta muove davvero il numero</h3>
-          <span class="sub">Sharpe mediano condizionato a ciascun asse</span></div>
+        <div class="card-h"><h3>Which choice actually moves the number</h3>
+          <span class="sub">median Sharpe conditioned on each axis</span></div>
         <div class="card-b"><div class="axes" id="axes"></div></div>
       </div>
 
       <div class="card">
         <div class="card-h">
-          <h3>Tutte le costruzioni</h3>
-          <button class="mini" id="csvBtn">scarica CSV</button>
+          <h3>Every construction</h3>
+          <button class="mini" id="csvBtn">download CSV</button>
         </div>
         <div class="tw"><table id="tbl"><thead></thead><tbody></tbody></table></div>
       </div>
     </div>
 
     <div class="foot">
-      Il fascio si costruisce così: per ogni finestra in-sample le regole candidate vengono ordinate
-      secondo la metrica scelta, i migliori vengono filtrati finché la correlazione a coppie resta
-      sotto il tetto, e i sopravvissuti si equipesano sul periodo <em>successivo</em>. Le gambe
-      out-of-sample vengono concatenate. Poi si ripete su ogni punto della griglia.
-      Nessun dato lascia il tuo browser: il calcolo gira qui dentro.
-      Il metodo è la <em>specification curve analysis</em> applicata ai backtest.
+      How the bundle is built: for each in-sample window the candidate rules are ranked by the
+      chosen metric, the best are filtered until pairwise correlation stays under the cap, and the
+      survivors are equal-weighted over the <em>following</em> period. The out-of-sample legs are
+      stitched together. Then it repeats at every point of the grid.
+      No data leaves your browser: the computation runs in this tab.
+      The method is <em>specification curve analysis</em> applied to back-tests.
     </div>
   </main>
 </div>
@@ -402,7 +402,7 @@ function syntheticPrices(n, seed) {
 
 function parseCSV(text) {
   const lines = text.split(/\r?\n/).filter(l => l.trim().length);
-  if (!lines.length) throw new Error("Il file è vuoto.");
+  if (!lines.length) throw new Error("The file is empty.");
   const delim = (lines[0].match(/;/g) || []).length > (lines[0].match(/,/g) || []).length ? ";" : ",";
   const head = lines[0].split(delim).map(h => h.trim().toLowerCase().replace(/^["']|["']$/g, ""));
 
@@ -419,7 +419,7 @@ function parseCSV(text) {
       if (j !== di && isFinite(parseFloat(probe[j]))) { ci = j; break; }
     }
   }
-  if (ci < 0) throw new Error("Non trovo una colonna di prezzi numerica.");
+  if (ci < 0) throw new Error("No numeric price column found.");
 
   const dates = [], vals = [];
   for (let i = headerLooksReal ? 1 : 0; i < lines.length; i++) {
@@ -808,7 +808,7 @@ self.onmessage = (e) => {
       const prices = new Float64Array(msg.prices);
       const barsPerYear = msg.barsPerYear;
 
-      self.postMessage({ type: "stage", text: "costruisco i candidati…" });
+      self.postMessage({ type: "stage", text: "building the candidates…" });
       const D = buildCandidates(prices, msg.costBps, msg.volTarget, barsPerYear);
       D.dates = dates;
 
@@ -818,7 +818,7 @@ self.onmessage = (e) => {
         for (const metric of msg.metrics) for (const maxCorr of msg.corrs) for (const maxCols of msg.colsList)
           cfgs.push({ L, step, anchored, metric, maxCorr, maxCols, topN: msg.topN, firstOS, barsPerYear });
 
-      self.postMessage({ type: "stage", text: `eseguo ${cfgs.length} costruzioni…`, total: cfgs.length });
+      self.postMessage({ type: "stage", text: `running ${cfgs.length} constructions…`, total: cfgs.length });
 
       const cache = new Map();
       const rows = [], paths = [];
@@ -845,7 +845,7 @@ self.onmessage = (e) => {
         }
       }
 
-      if (!rows.length) throw new Error("Nessuna costruzione ha prodotto un risultato: prova una data di primo OOS più vicina all'inizio dei dati, o una finestra IS più corta.");
+      if (!rows.length) throw new Error("No construction produced a result: try a first-OOS date closer to the start of the data, or a shorter IS window.");
 
       // resample every path onto a common 130-point grid of cumulative return
       const P = 130, lo = Math.min(...paths.map(p => p.idxs[0]));
@@ -915,7 +915,7 @@ self.onmessage = (e) => {
   function gridSize() {
     const n = ["Ls", "steps", "anchors", "metrics", "corrs", "colsList"]
       .reduce((a, k) => a * Math.max(0, multi(k).length), 1);
-    $("gridSize").textContent = n.toLocaleString("it-IT");
+    $("gridSize").textContent = n.toLocaleString("en-US");
     $("runBtn").disabled = n === 0 || !DATA;
     return n;
   }
@@ -944,7 +944,7 @@ self.onmessage = (e) => {
   $("srcCsv").addEventListener("click", () => setSource("csv"));
 
   function loadDemo() {
-    $("dataInfo").textContent = "genero la serie…";
+    $("dataInfo").textContent = "generating the series…";
     worker.postMessage({ cmd: "load", source: "demo", seed: 7 });
   }
 
@@ -959,10 +959,10 @@ self.onmessage = (e) => {
   fileInput.addEventListener("change", () => { if (fileInput.files[0]) readFile(fileInput.files[0]); });
 
   function readFile(f) {
-    $("dataInfo").textContent = `leggo ${f.name}…`;
+    $("dataInfo").textContent = `reading ${f.name}…`;
     const r = new FileReader();
     r.onload = () => worker.postMessage({ cmd: "load", source: "csv", text: r.result });
-    r.onerror = () => { $("dataInfo").textContent = "Non riesco a leggere il file."; };
+    r.onerror = () => { $("dataInfo").textContent = "Cannot read the file."; };
     r.readAsText(f);
   }
 
@@ -994,8 +994,8 @@ self.onmessage = (e) => {
     if (m.type === "loaded") {
       DATA = { prices: new Float64Array(m.prices), dates: m.dates, barsPerYear: m.barsPerYear };
       $("dataInfo").innerHTML =
-        `<b>${m.n.toLocaleString("it-IT")}</b> barre &middot; <b>${m.from}</b> → <b>${m.to}</b><br>` +
-        `frequenza misurata: <b>${m.barsPerYear.toFixed(0)}</b> barre/anno`;
+        `<b>${m.n.toLocaleString("en-US")}</b> bars &middot; <b>${m.from}</b> → <b>${m.to}</b><br>` +
+        `measured frequency: <b>${m.barsPerYear.toFixed(0)}</b> bars/year`;
       // default first OOS at 60% through the sample
       const t = new Date(m.dates[Math.floor(m.dates.length * 0.6)]);
       $("firstOS").value = t.toISOString().slice(0, 10);
@@ -1010,7 +1010,7 @@ self.onmessage = (e) => {
     } else if (m.type === "done") {
       $("prog").classList.add("hidden");
       $("runBtn").disabled = false;
-      $("stageMsg").textContent = `${m.rows.length} costruzioni in ${m.elapsed.toFixed(1)}s`;
+      $("stageMsg").textContent = `${m.rows.length} constructions in ${m.elapsed.toFixed(1)}s`;
       RESULT = m;
       render();
     } else if (m.type === "error") {
@@ -1027,7 +1027,7 @@ self.onmessage = (e) => {
     $("results").classList.remove("hidden");
     $("empty").classList.add("hidden");
     v.className = "verdict loose";
-    $("vmark").textContent = "Errore";
+    $("vmark").textContent = "Error";
     $("vtext").textContent = text;
     ["stats", "axes"].forEach(id => $(id).innerHTML = "");
   }
@@ -1056,19 +1056,19 @@ self.onmessage = (e) => {
     const tight = pos >= 0.9 && delta <= 0.25 && med > 0;
     const v = $("verdict");
     v.className = "verdict " + (tight ? "tight" : "loose");
-    $("vmark").textContent = tight ? "FASCIO COMPATTO" : "FASCIO DISPERSO";
+    $("vmark").textContent = tight ? "TIGHT BUNDLE" : "LOOSE BUNDLE";
     $("vtext").innerHTML = tight
-      ? `Il <b>${pct(pos)}</b> delle costruzioni è positivo e la migliore batte la mediana di appena <b>${delta.toFixed(prec)}</b>. Il risultato non dipende da quale costruzione hai scelto: c'è poco da scegliere. Questa è la forma di un edge che regge.`
-      : `La migliore costruzione batte la mediana di <b>${delta.toFixed(prec)}</b> di Sharpe, e solo lo <b>${pct(pos)}</b> delle costruzioni è positivo. Riportare la curva migliore significherebbe riportare <b>${max.toFixed(2)}</b> quando il valore difendibile è <b>${med.toFixed(2)}</b>. Sospetto.`;
+      ? `<b>${pct(pos)}</b> of the constructions are positive and the best one beats the median by only <b>${delta.toFixed(prec)}</b>. The result does not depend on which construction you picked: there is little left to pick. This is the shape of an edge that holds.`
+      : `The best construction beats the median by <b>${delta.toFixed(prec)}</b> of Sharpe, and only <b>${pct(pos)}</b> of the constructions are positive. Reporting the best curve would mean reporting <b>${max.toFixed(2)}</b> when the defensible number is <b>${med.toFixed(2)}</b>. Suspicious.`;
 
     // ---- stats
     $("stats").innerHTML = [
-      ["Mediana", fmt(med, prec), "il numero difendibile", med > 0 ? "ok" : "hi"],
-      ["Migliore", fmt(max, prec), "quello che riporteresti", "hi"],
-      ["Migliore − mediana", fmt(delta, prec), "quanto compra scegliere dopo", "hi"],
-      ["Dispersione", sd.toFixed(2), "sd sulla griglia", "bl"],
-      ["Positive", pct(pos), `${rows.length} costruzioni`, "bl"],
-      ["Intervallo", `${min.toFixed(2)} … ${max.toFixed(2)}`, "min e max", ""],
+      ["Median", fmt(med, prec), "the defensible number", med > 0 ? "ok" : "hi"],
+      ["Best", fmt(max, prec), "the one you would report", "hi"],
+      ["Best − median", fmt(delta, prec), "what picking afterwards buys", "hi"],
+      ["Spread", sd.toFixed(2), "sd across the grid", "bl"],
+      ["Positive", pct(pos), `${rows.length} constructions`, "bl"],
+      ["Range", `${min.toFixed(2)} … ${max.toFixed(2)}`, "min and max", ""],
     ].map(([k, val, n, cls]) =>
       `<div class="st ${cls}"><span class="k">${k}</span><span class="v">${val}</span><span class="n">${n}</span></div>`
     ).join("");
@@ -1165,7 +1165,7 @@ self.onmessage = (e) => {
     g.strokeStyle = tok("--text"); g.lineWidth = 1.6;
     g.beginPath(); g.moveTo(X(med), Tp); g.lineTo(X(med), Tp + ph); g.stroke();
     g.fillStyle = tok("--text"); g.font = '10px "JetBrains Mono", monospace';
-    g.textAlign = "center"; g.fillText("mediana " + fmt(med), X(med), Tp + 9);
+    g.textAlign = "center"; g.fillText("median " + fmt(med), X(med), Tp + 9);
     g.fillStyle = tok("--faint"); g.textAlign = "left";
     g.fillText(sorted[0].toFixed(2), L, h - 7);
     g.textAlign = "right"; g.fillText(sorted[sorted.length - 1].toFixed(2), w - R, h - 7);
@@ -1174,12 +1174,12 @@ self.onmessage = (e) => {
   // ---- marginal effect of each axis
   function drawAxes(rows, med) {
     const defs = [
-      ["finestra IS (mesi)", r => r.L],
-      ["cadenza (mesi)", r => r.step],
-      ["tipo di finestra", r => r.anchored ? "espansiva" : "rolling"],
-      ["metrica", r => r.metric],
-      ["tetto correlazione", r => r.maxCorr],
-      ["quanti schierati", r => r.maxCols],
+      ["IS window (months)", r => r.L],
+      ["cadence (months)", r => r.step],
+      ["window type", r => r.anchored ? "anchored" : "rolling"],
+      ["metric", r => r.metric],
+      ["correlation cap", r => r.maxCorr],
+      ["how many held", r => r.maxCols],
     ];
     const html = defs.map(([label, key]) => {
       const groups = new Map();
@@ -1205,7 +1205,7 @@ self.onmessage = (e) => {
          <div class="btrack"><div class="bfill${v < 0 ? " neg" : ""}" style="width:${w.toFixed(1)}%"></div></div>
          <div class="bval">${fmt(v)}</div></div>`;
       }).join("");
-      const flag = spread > 0.15 ? '<span class="flag">non è una scelta libera</span>' : "";
+      const flag = spread > 0.15 ? '<span class="flag">not a free choice</span>' : "";
       return `<div class="axbox"><h4>${label}${flag}</h4><div class="bars">${bars}</div></div>`;
     }).join("");
     $("axes").innerHTML = html;
@@ -1215,9 +1215,9 @@ self.onmessage = (e) => {
   let sortKey = "sharpe", sortDir = -1;
   function drawTable(rows) {
     const cols = [
-      ["key", "costruzione"], ["metric", "metrica"], ["L", "IS"], ["step", "passo"],
-      ["anchored", "finestra"], ["maxCorr", "corr"], ["maxCols", "n"],
-      ["sharpe", "sharpe"], ["ret", "rendimento"], ["avg_trade", "trade medio"], ["folds", "fold"],
+      ["key", "construction"], ["metric", "metric"], ["L", "IS"], ["step", "step"],
+      ["anchored", "window"], ["maxCorr", "corr"], ["maxCols", "n"],
+      ["sharpe", "sharpe"], ["ret", "return"], ["avg_trade", "avg trade"], ["folds", "folds"],
     ];
     const t = $("tbl");
     t.querySelector("thead").innerHTML = "<tr>" + cols.map(([k, l]) =>
@@ -1228,7 +1228,7 @@ self.onmessage = (e) => {
     });
     t.querySelector("tbody").innerHTML = sorted.map(r => "<tr>" + cols.map(([k]) => {
       let v = r[k];
-      if (k === "anchored") v = v ? "espansiva" : "rolling";
+      if (k === "anchored") v = v ? "anchored" : "rolling";
       else if (k === "sharpe") return `<td class="num">${fmt(v)}</td>`;
       else if (k === "ret") return `<td class="num">${(v * 100).toFixed(1)}%</td>`;
       else if (k === "avg_trade") return `<td class="num">${isFinite(v) ? (v * 1e4).toFixed(1) + " bp" : "—"}</td>`;
@@ -1266,9 +1266,9 @@ self.onmessage = (e) => {
     btn.disabled = true;
     try {
       saveText("walkforward_bundle.csv", head + "\n" + body);
-      btn.textContent = "salvato";
+      btn.textContent = "saved";
     } catch (err) {
-      btn.textContent = "non riuscito";
+      btn.textContent = "failed";
     } finally {
       setTimeout(() => { btn.textContent = label; btn.disabled = false; }, 2200);
     }
@@ -1276,7 +1276,7 @@ self.onmessage = (e) => {
 
   $("viewToggle").addEventListener("click", () => {
     view = view === "ret" ? "dev" : "ret";
-    $("viewToggle").textContent = view === "ret" ? "vista: rendimento" : "vista: scarto dalla mediana";
+    $("viewToggle").textContent = view === "ret" ? "view: return" : "view: deviation from median";
     drawFan();
   });
 
