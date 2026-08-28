@@ -1,0 +1,1301 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bundle Tester — walk-forward multiverse</title>
+<meta name="description" content="Esegui ogni walk-forward difendibile sulla tua serie di prezzi e guarda quanto stretto resta il fascio. Il calcolo gira nel tuo browser: nessun dato viene caricato.">
+<meta property="og:title" content="Bundle Tester — walk-forward multiverse">
+<meta property="og:description" content="Ogni walk-forward dipende da scelte che nessuno sa giustificare. Eseguile tutte e guarda quanto stretto resta il fascio.">
+<meta property="og:type" content="website">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+
+<style>
+:root{
+  --ground:#f5f6f7;
+  --surface:#ffffff;
+  --surface-2:#eceef0;
+  --surface-3:#e2e5e8;
+  --text:#14181c;
+  --muted:#5a636d;
+  --faint:#8a929b;
+  --line:#dcdfe3;
+  --line-2:#c2c7cd;
+  --blue:#2a78d6;
+  --blue-soft:rgba(42,120,214,.10);
+  --orange:#eb6834;
+  --orange-soft:rgba(235,104,52,.10);
+  --good:#1f7a4d;
+  --good-soft:rgba(31,122,77,.10);
+  --warn:#a8641a;
+  --warn-soft:rgba(168,100,26,.10);
+  --mass:rgba(30,40,54,.13);
+  --shadow:0 1px 2px rgba(14,18,24,.05),0 8px 24px -18px rgba(14,18,24,.3);
+  --f-ui:"Archivo",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --rail:330px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0f1216; --surface:#161a1f; --surface-2:#1d2228; --surface-3:#262c33;
+  --text:#e4e7ea; --muted:#98a1aa; --faint:#6d757e; --line:#252a31; --line-2:#39414a;
+  --blue:#5b9ae8; --blue-soft:rgba(91,154,232,.14);
+  --orange:#f08a5c; --orange-soft:rgba(240,138,92,.14);
+  --good:#4bbb85; --good-soft:rgba(75,187,133,.14);
+  --warn:#d9a441; --warn-soft:rgba(217,164,65,.14);
+  --mass:rgba(190,206,228,.11);
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 10px 28px -20px rgba(0,0,0,.9);
+}}
+:root[data-theme="dark"]{
+  --ground:#0f1216; --surface:#161a1f; --surface-2:#1d2228; --surface-3:#262c33;
+  --text:#e4e7ea; --muted:#98a1aa; --faint:#6d757e; --line:#252a31; --line-2:#39414a;
+  --blue:#5b9ae8; --blue-soft:rgba(91,154,232,.14);
+  --orange:#f08a5c; --orange-soft:rgba(240,138,92,.14);
+  --good:#4bbb85; --good-soft:rgba(75,187,133,.14);
+  --warn:#d9a441; --warn-soft:rgba(217,164,65,.14);
+  --mass:rgba(190,206,228,.11);
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 10px 28px -20px rgba(0,0,0,.9);
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--text);font-family:var(--f-ui);
+     font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0}
+button{font-family:inherit}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:3px}
+
+/* ---------- shell ---------- */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+        padding:12px 20px;background:var(--surface);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:baseline;gap:10px}
+.brand b{font-size:16px;font-weight:700;letter-spacing:-.01em}
+.brand span{font-family:var(--f-mono);font-size:11px;color:var(--faint);letter-spacing:.08em}
+.topbar .tag{font-size:12.5px;color:var(--muted);max-width:52ch}
+
+.shell{display:grid;grid-template-columns:var(--rail) 1fr;gap:0;min-height:calc(100vh - 53px)}
+@media(max-width:940px){.shell{grid-template-columns:1fr}}
+
+.rail{background:var(--surface);border-right:1px solid var(--line);padding:18px 18px 40px;
+      display:flex;flex-direction:column;gap:20px}
+@media(max-width:940px){.rail{border-right:0;border-bottom:1px solid var(--line)}}
+.stage{padding:20px;min-width:0}
+
+/* ---------- controls ---------- */
+.grp{display:flex;flex-direction:column;gap:9px}
+.grp>label,.lbl{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.14em;
+                text-transform:uppercase;color:var(--faint);font-weight:500}
+.seg{display:flex;flex-wrap:wrap;gap:5px}
+.chip{font-family:var(--f-mono);font-size:12px;padding:5px 9px;border-radius:3px;cursor:pointer;
+      border:1px solid var(--line-2);background:transparent;color:var(--muted);transition:.12s;
+      user-select:none}
+.chip:hover{color:var(--text);border-color:var(--text)}
+.chip[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
+:root[data-theme="dark"] .chip[aria-pressed="true"]{color:#0f1216}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .chip[aria-pressed="true"]{color:#0f1216}}
+
+.file{border:1.5px dashed var(--line-2);border-radius:5px;padding:16px 14px;text-align:center;
+      cursor:pointer;transition:.14s;background:var(--surface-2)}
+.file:hover,.file.over{border-color:var(--blue);background:var(--blue-soft)}
+.file b{display:block;font-size:13.5px;margin-bottom:3px}
+.file span{font-size:12px;color:var(--muted)}
+input[type=file]{display:none}
+.datainfo{font-family:var(--f-mono);font-size:11.5px;color:var(--muted);line-height:1.5;
+          background:var(--surface-2);border:1px solid var(--line);border-radius:4px;padding:9px 11px}
+.datainfo b{color:var(--text)}
+
+.run{width:100%;padding:12px;border:0;border-radius:4px;background:var(--blue);color:#fff;
+     font-size:14.5px;font-weight:600;cursor:pointer;transition:.14s;letter-spacing:.01em}
+.run:hover{filter:brightness(1.08)}
+.run:disabled{opacity:.5;cursor:not-allowed}
+:root[data-theme="dark"] .run{color:#0f1216}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .run{color:#0f1216}}
+.gridsize{font-family:var(--f-mono);font-size:11.5px;color:var(--muted);text-align:center}
+.gridsize b{color:var(--text);font-size:13px}
+
+/* ---------- verdict ---------- */
+.verdict{border-radius:6px;padding:18px 20px;margin-bottom:18px;border:1px solid var(--line);
+         background:var(--surface);box-shadow:var(--shadow);display:flex;gap:20px;
+         align-items:center;flex-wrap:wrap}
+.verdict.tight{border-left:4px solid var(--good)}
+.verdict.loose{border-left:4px solid var(--orange)}
+.verdict .vmark{font-size:26px;font-weight:700;letter-spacing:-.02em;white-space:nowrap}
+.verdict.tight .vmark{color:var(--good)}
+.verdict.loose .vmark{color:var(--orange)}
+.verdict p{margin:0;font-size:14px;color:var(--muted);flex:1;min-width:260px}
+.verdict p b{color:var(--text);font-weight:600}
+
+/* ---------- stats ---------- */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;
+       background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;
+       margin-bottom:18px}
+.st{background:var(--surface);padding:13px 15px}
+.st .k{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;
+       color:var(--faint);display:block;margin-bottom:6px}
+.st .v{font-family:var(--f-mono);font-size:21px;font-weight:700;font-variant-numeric:tabular-nums;
+       display:block;letter-spacing:-.02em}
+.st .n{font-size:11.5px;color:var(--muted);display:block;margin-top:3px}
+.st.hi .v{color:var(--orange)} .st.ok .v{color:var(--good)} .st.bl .v{color:var(--blue)}
+
+/* ---------- cards ---------- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:6px;
+      box-shadow:var(--shadow);margin-bottom:18px;overflow:hidden}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+        padding:11px 16px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.card-h h3{font-size:13px;font-weight:600;letter-spacing:-.005em}
+.card-h .sub{font-family:var(--f-mono);font-size:11px;color:var(--faint)}
+.card-b{padding:12px 14px}
+canvas{display:block;width:100%;height:auto}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.legend i{width:14px;height:2px;display:inline-block;border-radius:2px;margin-right:5px;
+          vertical-align:middle}
+
+.bars{display:flex;flex-direction:column}
+.brow{display:grid;grid-template-columns:minmax(96px,150px) 1fr 54px;gap:12px;align-items:center;
+      padding:6px 0}
+.blab{font-size:13px;color:var(--muted)}
+.blab b{color:var(--text);font-weight:500}
+.btrack{height:8px;background:var(--surface-3);border-radius:2px;overflow:hidden}
+.bfill{height:100%;background:var(--blue);border-radius:2px}
+.bfill.neg{background:var(--orange)}
+.bval{font-family:var(--f-mono);font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
+.axes{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:18px}
+.axbox h4{margin:0 0 8px;font-family:var(--f-mono);font-size:10px;letter-spacing:.13em;
+          text-transform:uppercase;color:var(--faint);font-weight:500}
+.flag{color:var(--orange);font-family:var(--f-mono);font-size:10px;margin-left:6px}
+
+/* ---------- progress / empty ---------- */
+.prog{height:3px;background:var(--surface-3);border-radius:2px;overflow:hidden;margin-top:10px}
+.pbar{height:100%;width:0;background:var(--blue);transition:width .18s linear}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+       min-height:56vh;text-align:center;color:var(--muted);padding:20px}
+.empty h2{font-size:19px;color:var(--text);font-weight:600}
+.empty p{margin:0;max-width:46ch;font-size:14px}
+.empty .hint{font-family:var(--f-mono);font-size:12px;color:var(--faint)}
+
+/* ---------- table ---------- */
+.tw{overflow:auto;max-height:340px}
+table{border-collapse:collapse;width:100%;font-size:12.5px;min-width:620px}
+th,td{text-align:left;padding:6px 11px;border-bottom:1px solid var(--line);white-space:nowrap}
+thead th{position:sticky;top:0;background:var(--surface-2);font-family:var(--f-mono);font-size:9.5px;
+         letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:500;
+         cursor:pointer;z-index:2}
+thead th:hover{color:var(--text)}
+td.num{font-family:var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
+tbody tr:hover td{background:var(--surface-2)}
+.mini{font-family:var(--f-mono);font-size:11px;padding:4px 9px;border:1px solid var(--line-2);
+      border-radius:3px;background:transparent;color:var(--muted);cursor:pointer}
+.mini:hover{color:var(--text);border-color:var(--text)}
+
+.foot{padding:26px 20px 40px;color:var(--faint);font-size:12.5px;line-height:1.6;
+      border-top:1px solid var(--line);margin-top:10px}
+.foot a{color:var(--blue)}
+.hidden{display:none!important}
+</style>
+
+<div class="topbar">
+  <div class="brand"><b>Bundle Tester</b><span>WALK-FORWARD MULTIVERSE</span></div>
+  <div class="tag">Ogni walk-forward dipende da scelte che nessuno sa giustificare. Eseguile tutte e guarda quanto stretto resta il fascio.</div>
+</div>
+
+<div class="shell">
+  <!-- ------------------------------------------------ controls -->
+  <aside class="rail">
+    <div class="grp">
+      <label>1 &middot; Dati</label>
+      <div class="seg" role="group" aria-label="Sorgente dati">
+        <button class="chip" id="srcDemo" aria-pressed="true">serie dimostrativa</button>
+        <button class="chip" id="srcCsv" aria-pressed="false">il mio CSV</button>
+      </div>
+      <div class="file" id="drop">
+        <input type="file" id="fileInput" accept=".csv,.txt">
+        <b>Trascina un CSV</b>
+        <span>una colonna data, una colonna prezzo di chiusura</span>
+      </div>
+      <div class="datainfo" id="dataInfo">Serie sintetica: 9.000 barre, nessun edge dentro, per costruzione.</div>
+    </div>
+
+    <div class="grp">
+      <label>2 &middot; Primo out-of-sample</label>
+      <input type="date" id="firstOS" style="width:100%;padding:7px 9px;border:1px solid var(--line-2);
+             border-radius:4px;background:var(--surface);color:var(--text);font-family:var(--f-mono);font-size:12.5px">
+    </div>
+
+    <div class="grp">
+      <label>3 &middot; La griglia</label>
+
+      <div class="lbl" style="margin-top:2px">Finestra in-sample (mesi)</div>
+      <div class="seg" data-multi="Ls">
+        <button class="chip" data-v="12" aria-pressed="true">12</button>
+        <button class="chip" data-v="24" aria-pressed="true">24</button>
+        <button class="chip" data-v="36" aria-pressed="true">36</button>
+        <button class="chip" data-v="48" aria-pressed="true">48</button>
+      </div>
+
+      <div class="lbl">Cadenza di riselezione (mesi)</div>
+      <div class="seg" data-multi="steps">
+        <button class="chip" data-v="3" aria-pressed="true">3</button>
+        <button class="chip" data-v="6" aria-pressed="true">6</button>
+        <button class="chip" data-v="12" aria-pressed="true">12</button>
+      </div>
+
+      <div class="lbl">Tipo di finestra</div>
+      <div class="seg" data-multi="anchors">
+        <button class="chip" data-v="1" aria-pressed="true">espansiva</button>
+        <button class="chip" data-v="0" aria-pressed="true">rolling</button>
+      </div>
+
+      <div class="lbl">Metrica di ranking</div>
+      <div class="seg" data-multi="metrics">
+        <button class="chip" data-v="sharpe" aria-pressed="true">sharpe</button>
+        <button class="chip" data-v="sortino" aria-pressed="true">sortino</button>
+        <button class="chip" data-v="calmar" aria-pressed="true">calmar</button>
+        <button class="chip" data-v="profit_factor" aria-pressed="false">profit factor</button>
+        <button class="chip" data-v="total_return" aria-pressed="false">total return</button>
+        <button class="chip" data-v="max_drawdown" aria-pressed="false">max drawdown</button>
+      </div>
+
+      <div class="lbl">Tetto di correlazione</div>
+      <div class="seg" data-multi="corrs">
+        <button class="chip" data-v="0.3" aria-pressed="true">0.3</button>
+        <button class="chip" data-v="0.5" aria-pressed="true">0.5</button>
+        <button class="chip" data-v="0.7" aria-pressed="true">0.7</button>
+      </div>
+
+      <div class="lbl">Quanti ne schiero</div>
+      <div class="seg" data-multi="colsList">
+        <button class="chip" data-v="3" aria-pressed="false">3</button>
+        <button class="chip" data-v="5" aria-pressed="true">5</button>
+        <button class="chip" data-v="10" aria-pressed="true">10</button>
+      </div>
+    </div>
+
+    <div class="grp">
+      <label>4 &middot; Costi</label>
+      <div class="seg" data-single="costBps">
+        <button class="chip" data-v="0" aria-pressed="false">0 bp</button>
+        <button class="chip" data-v="2" aria-pressed="true">2 bp</button>
+        <button class="chip" data-v="5" aria-pressed="false">5 bp</button>
+        <button class="chip" data-v="10" aria-pressed="false">10 bp</button>
+      </div>
+    </div>
+
+    <div class="grp">
+      <div class="gridsize">costruzioni da eseguire: <b id="gridSize">432</b></div>
+      <button class="run" id="runBtn">Esegui il bundle</button>
+      <div class="prog hidden" id="prog"><div class="pbar" id="pbar"></div></div>
+      <div class="gridsize" id="stageMsg"></div>
+    </div>
+  </aside>
+
+  <!-- ------------------------------------------------ results -->
+  <main class="stage">
+    <div class="empty" id="empty">
+      <h2>Nessun risultato ancora</h2>
+      <p>La serie dimostrativa è generata senza alcun edge dentro, per costruzione. Eseguila e guarda la forma che prende il fascio: è quella il metro di paragone.</p>
+      <p class="hint">poi carica una tua serie di prezzi e confronta</p>
+    </div>
+
+    <div id="results" class="hidden">
+      <div class="verdict" id="verdict">
+        <div class="vmark" id="vmark">—</div>
+        <p id="vtext"></p>
+      </div>
+
+      <div class="stats" id="stats"></div>
+
+      <div class="card">
+        <div class="card-h">
+          <h3>Il fascio</h3>
+          <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+            <div class="legend">
+              <span><i style="background:var(--mass);height:3px"></i>tutte</span>
+              <span><i style="background:var(--blue)"></i>mediana</span>
+              <span><i style="background:var(--orange)"></i>migliore</span>
+            </div>
+            <button class="mini" id="viewToggle">vista: rendimento</button>
+          </div>
+        </div>
+        <div class="card-b"><canvas id="fan"></canvas></div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><h3>Distribuzione dello Sharpe out-of-sample</h3>
+          <span class="sub">una osservazione per costruzione</span></div>
+        <div class="card-b"><canvas id="hist"></canvas></div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><h3>Quale scelta muove davvero il numero</h3>
+          <span class="sub">Sharpe mediano condizionato a ciascun asse</span></div>
+        <div class="card-b"><div class="axes" id="axes"></div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">
+          <h3>Tutte le costruzioni</h3>
+          <button class="mini" id="csvBtn">scarica CSV</button>
+        </div>
+        <div class="tw"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+
+    <div class="foot">
+      Il fascio si costruisce così: per ogni finestra in-sample le regole candidate vengono ordinate
+      secondo la metrica scelta, i migliori vengono filtrati finché la correlazione a coppie resta
+      sotto il tetto, e i sopravvissuti si equipesano sul periodo <em>successivo</em>. Le gambe
+      out-of-sample vengono concatenate. Poi si ripete su ogni punto della griglia.
+      Nessun dato lascia il tuo browser: il calcolo gira qui dentro.
+      Il metodo è la <em>specification curve analysis</em> applicata ai backtest.
+    </div>
+  </main>
+</div>
+
+<script id="workerSrc" type="text/plain">
+/* =====================================================================
+   The engine. Runs inside a Web Worker so the page stays responsive.
+
+   Layout choice that matters: the candidate matrix is COLUMN-MAJOR, one
+   contiguous Float64Array with column j occupying [j*T, (j+1)*T). Every hot
+   loop in a walk-forward is a per-column scan over a row range, so this makes
+   the inner loop a straight sequential read. Row-major would stride.
+   ===================================================================== */
+
+// ---------------------------------------------------------------- prices
+function syntheticPrices(n, seed) {
+  // xorshift128, so a given seed always yields the same series
+  let a = seed | 0 || 7, b = 362436069, c = 521288629, d = 88675123;
+  const u = () => {
+    const t = a ^ (a << 11);
+    a = b; b = c; c = d;
+    d = (d ^ (d >>> 19)) ^ (t ^ (t >>> 8));
+    return ((d >>> 0) / 4294967296);
+  };
+  const nrm = () => {                      // Box-Muller
+    let x = 0, y = 0;
+    while (x === 0) x = u();
+    while (y === 0) y = u();
+    return Math.sqrt(-2 * Math.log(x)) * Math.cos(2 * Math.PI * y);
+  };
+  // Student-t with 4 degrees of freedom: Z / sqrt(chi2_4 / 4), where chi2_4 is
+  // the sum of four squared normals. Then scaled by 1/sqrt(2) so the shock has
+  // unit variance — t(4) has variance df/(df-2) = 2. Getting this wrong makes
+  // the series far too calm, the constant drift dominates, and a "no edge"
+  // demo quietly acquires a trend for the rules to find.
+  const t4 = () => {
+    let chi = 0;
+    for (let q = 0; q < 4; q++) { const z = nrm(); chi += z * z; }
+    return (nrm() / Math.sqrt(Math.max(1e-9, chi / 4))) / Math.SQRT2;
+  };
+  const px = new Float64Array(n);
+  let vol = 0.010, prev = 0.0, level = 100;
+  for (let i = 0; i < n; i++) {
+    if (i) vol = 0.0016 + 0.86 * vol + 0.10 * Math.abs(prev);
+    const r = 0.00022 + vol * Math.max(-8, Math.min(8, t4()));
+    prev = r;
+    level *= Math.exp(r);
+    px[i] = level;
+  }
+  return px;
+}
+
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim().length);
+  if (!lines.length) throw new Error("Il file è vuoto.");
+  const delim = (lines[0].match(/;/g) || []).length > (lines[0].match(/,/g) || []).length ? ";" : ",";
+  const head = lines[0].split(delim).map(h => h.trim().toLowerCase().replace(/^["']|["']$/g, ""));
+
+  const dateNames = ["date", "data", "datetime", "timestamp", "time", "day"];
+  const closeNames = ["close", "adj close", "adj_close", "chiusura", "price", "last", "settle"];
+  let di = head.findIndex(h => dateNames.includes(h));
+  let ci = head.findIndex(h => closeNames.includes(h));
+  const headerLooksReal = di >= 0 || ci >= 0;
+  if (di < 0) di = 0;
+  if (ci < 0) {
+    // last column that parses as a number on the first data row
+    const probe = lines[headerLooksReal ? 1 : 0].split(delim);
+    for (let j = probe.length - 1; j >= 0; j--) {
+      if (j !== di && isFinite(parseFloat(probe[j]))) { ci = j; break; }
+    }
+  }
+  if (ci < 0) throw new Error("Non trovo una colonna di prezzi numerica.");
+
+  const dates = [], vals = [];
+  for (let i = headerLooksReal ? 1 : 0; i < lines.length; i++) {
+    const p = lines[i].split(delim);
+    if (p.length <= Math.max(di, ci)) continue;
+    const v = parseFloat(String(p[ci]).replace(/["']/g, "").replace(/\s/g, ""));
+    const dRaw = String(p[di]).replace(/["']/g, "").trim();
+    const d = new Date(dRaw);
+    if (!isFinite(v) || v <= 0 || isNaN(d.getTime())) continue;
+    dates.push(d); vals.push(v);
+  }
+  if (vals.length < 400) {
+    throw new Error(`Solo ${vals.length} righe valide: ne servono almeno 400.`);
+  }
+  const order = dates.map((d, i) => i).sort((x, y) => dates[x] - dates[y]);
+  return {
+    dates: order.map(i => dates[i]),
+    prices: Float64Array.from(order.map(i => vals[i])),
+  };
+}
+
+// ------------------------------------------------------- candidate sweep
+const FASTS = [5, 10, 15, 20, 30, 40];
+const SLOWS = [40, 60, 80, 120, 160, 250];
+
+function buildCandidates(px, costBps, volTarget, barsPerYear) {
+  const T = px.length;
+  const ret1 = new Float64Array(T);
+  for (let i = 1; i < T; i++) ret1[i] = px[i] / px[i - 1] - 1;
+
+  // causal volatility scaling, computed once and shared by every rule
+  const W = 60, scale = new Float64Array(T).fill(0);
+  if (volTarget > 0) {
+    let s = 0, s2 = 0;
+    for (let i = 0; i < T; i++) {
+      s += ret1[i]; s2 += ret1[i] * ret1[i];
+      if (i >= W) { s -= ret1[i - W]; s2 -= ret1[i - W] * ret1[i - W]; }
+      if (i >= W) {
+        const m = s / W, v = Math.max(0, s2 / W - m * m);
+        const sd = Math.sqrt(v) * Math.sqrt(barsPerYear);
+        // shift(1): the scale applied at bar i uses data up to i-1
+        if (i + 1 < T) scale[i + 1] = sd > 1e-12 ? Math.min(3, volTarget / sd) : 0;
+      }
+    }
+  } else scale.fill(1);
+
+  const names = [], cols = [];
+  const cost = costBps * 1e-4;
+  const raw = new Float64Array(T);
+
+  const push = (name, posFn) => {
+    posFn(raw);
+    const r = new Float64Array(T), tv = new Float64Array(T);
+    let prevPos = 0;
+    for (let i = 0; i < T; i++) {
+      // execute next bar: position decided at i-1 earns the return of bar i
+      const pos = (i > 0 ? raw[i - 1] : 0) * scale[i];
+      const trade = Math.abs(pos - prevPos);
+      r[i] = pos * ret1[i] - cost * trade;
+      tv[i] = trade;
+      prevPos = pos;
+    }
+    names.push(name); cols.push({ r, t: tv });
+  };
+
+  for (const fast of FASTS) for (const slow of SLOWS) {
+    if (fast >= slow) continue;
+
+    push(`breakout_f${fast}_s${slow}`, out => {
+      let pos = 0;
+      const hi = rollMax(px, slow), lo = rollMin(px, slow), mid = rollMean(px, fast);
+      for (let i = 0; i < T; i++) {
+        const h = hi[i], l = lo[i], m = mid[i];
+        if (isFinite(h) && px[i] > h) pos = 1;
+        else if (isFinite(l) && px[i] < l) pos = -1;
+        if (isFinite(m)) { if (pos > 0 && px[i] < m) pos = 0; else if (pos < 0 && px[i] > m) pos = 0; }
+        out[i] = pos;
+      }
+    });
+
+    push(`crossover_f${fast}_s${slow}`, out => {
+      const af = 2 / (fast + 1), as = 2 / (slow + 1);
+      let ef = px[0], es = px[0];
+      for (let i = 0; i < T; i++) {
+        out[i] = i === 0 ? 0 : (ef > es ? 1 : -1);   // uses the previous bar's EMAs
+        ef += af * (px[i] - ef); es += as * (px[i] - es);
+      }
+    });
+
+    push(`tsmom_f${fast}_s${slow}`, out => {
+      const sign = new Float64Array(T);
+      for (let i = 0; i < T; i++) sign[i] = i >= slow ? (px[i] > px[i - slow] ? 1 : -1) : 0;
+      let acc = 0;
+      for (let i = 0; i < T; i++) {
+        acc += sign[i];
+        if (i >= fast) acc -= sign[i - fast];
+        out[i] = acc / Math.min(fast, i + 1);
+      }
+    });
+  }
+
+  const k = cols.length;
+  const R = new Float64Array(T * k), V = new Float64Array(T * k);
+  for (let j = 0; j < k; j++) { R.set(cols[j].r, j * T); V.set(cols[j].t, j * T); }
+  return { R, V, T, k, names };
+}
+
+function rollMax(a, w) { return rollExt(a, w, true); }
+function rollMin(a, w) { return rollExt(a, w, false); }
+function rollExt(a, w, isMax) {
+  // monotonic deque: O(n) regardless of window length, and shifted by one bar
+  const n = a.length, out = new Float64Array(n).fill(NaN), dq = new Int32Array(n);
+  let head = 0, tail = 0;
+  for (let i = 0; i < n; i++) {
+    if (i >= w) out[i] = a[dq[head]];
+    while (tail > head && ((isMax && a[dq[tail - 1]] <= a[i]) || (!isMax && a[dq[tail - 1]] >= a[i]))) tail--;
+    dq[tail++] = i;
+    if (dq[head] <= i - w) head++;
+  }
+  return out;
+}
+function rollMean(a, w) {
+  const n = a.length, out = new Float64Array(n).fill(NaN);
+  let s = 0;
+  for (let i = 0; i < n; i++) {
+    s += a[i];
+    if (i >= w) s -= a[i - w];
+    if (i >= w) out[i] = s / w;
+  }
+  return out;
+}
+
+// ------------------------------------------------------------- metrics
+// Every metric: (R, T, k, i0, i1, opts) -> Float64Array(k). Higher is better
+// unless `ascending` says otherwise.
+const METRICS = {
+  sharpe: { asc: false, fn: (R, T, k, i0, i1) => {
+    const n = i1 - i0, out = new Float64Array(k);
+    for (let j = 0; j < k; j++) {
+      const o = j * T; let m = 0, m2 = 0;
+      for (let i = i0; i < i1; i++) { const d = R[o + i] - m; m += d / (i - i0 + 1); m2 += d * (R[o + i] - m); }
+      const sd = Math.sqrt(m2 / n);
+      out[j] = sd > 1e-15 ? m / sd : 0;
+    }
+    return out;
+  }},
+  sortino: { asc: false, fn: (R, T, k, i0, i1) => {
+    const n = i1 - i0, out = new Float64Array(k);
+    for (let j = 0; j < k; j++) {
+      const o = j * T; let s = 0, dn = 0;
+      for (let i = i0; i < i1; i++) { const x = R[o + i]; s += x; if (x < 0) dn += x * x; }
+      const dd = Math.sqrt(dn / n);
+      out[j] = dd > 1e-15 ? (s / n) / dd : 0;
+    }
+    return out;
+  }},
+  calmar: { asc: false, fn: (R, T, k, i0, i1) => {
+    const n = i1 - i0, out = new Float64Array(k);
+    for (let j = 0; j < k; j++) {
+      const o = j * T;
+      // equity starts at 1.0 and THAT is already a peak, so a decline from
+      // inception counts. Starting the peak at the first bar's close hides it.
+      let eq = 1, peak = 1, worst = 0, s = 0;
+      for (let i = i0; i < i1; i++) {
+        s += R[o + i]; eq *= 1 + R[o + i];
+        if (eq > peak) peak = eq;
+        const dd = (peak - eq) / peak;
+        if (dd > worst) worst = dd;
+      }
+      out[j] = worst > 1e-12 ? (s / n) / worst : 0;
+    }
+    return out;
+  }},
+  max_drawdown: { asc: true, fn: (R, T, k, i0, i1) => {
+    const out = new Float64Array(k);
+    for (let j = 0; j < k; j++) {
+      const o = j * T; let eq = 1, peak = 1, worst = 0;
+      for (let i = i0; i < i1; i++) {
+        eq *= 1 + R[o + i];
+        if (eq > peak) peak = eq;
+        const dd = (peak - eq) / peak;
+        if (dd > worst) worst = dd;
+      }
+      out[j] = worst;
+    }
+    return out;
+  }},
+  total_return: { asc: false, fn: (R, T, k, i0, i1) => {
+    const out = new Float64Array(k);
+    for (let j = 0; j < k; j++) { const o = j * T; let s = 0; for (let i = i0; i < i1; i++) s += R[o + i]; out[j] = s; }
+    return out;
+  }},
+  profit_factor: { asc: false, fn: (R, T, k, i0, i1) => {
+    const out = new Float64Array(k);
+    for (let j = 0; j < k; j++) {
+      const o = j * T; let up = 0, dn = 0;
+      for (let i = i0; i < i1; i++) { const x = R[o + i]; if (x > 0) up += x; else dn -= x; }
+      out[j] = dn > 1e-15 ? up / dn : 0;
+    }
+    return out;
+  }},
+};
+
+// ------------------------------------------------------------ selection
+function topN(values, n, ascending) {
+  const k = values.length;
+  const idx = new Int32Array(k);
+  for (let i = 0; i < k; i++) idx[i] = i;
+  const bad = ascending ? Infinity : -Infinity;
+  const v = Float64Array.from(values, x => (isFinite(x) ? x : bad));
+  // non-finite metrics are demoted, never promoted: an infinite Sharpe is a
+  // zero-variance artefact, not the best candidate in the universe
+  const arr = Array.from(idx).sort((a, b) => ascending ? v[a] - v[b] : v[b] - v[a]);
+  return arr.slice(0, Math.min(n, k));
+}
+
+function standardizeSubset(R, T, cols, i0, i1) {
+  const n = i1 - i0, m = cols.length;
+  const z = new Float64Array(n * m);        // column-major, n rows
+  for (let c = 0; c < m; c++) {
+    const o = cols[c] * T, zo = c * n;
+    let mean = 0;
+    for (let i = 0; i < n; i++) mean += R[o + i0 + i];
+    mean /= n;
+    let ss = 0;
+    for (let i = 0; i < n; i++) { const d = R[o + i0 + i] - mean; z[zo + i] = d; ss += d * d; }
+    if (ss > 0) { const inv = 1 / Math.sqrt(ss); for (let i = 0; i < n; i++) z[zo + i] *= inv; }
+    else for (let i = 0; i < n; i++) z[zo + i] = 0;
+  }
+  return z;
+}
+
+function greedyUncorrelated(z, n, m, maxCorr, maxCols) {
+  const keep = [0];
+  for (let c = 1; c < m && keep.length < maxCols; c++) {
+    let admit = true;
+    for (const s of keep) {
+      let dot = 0;
+      const a = s * n, b = c * n;
+      for (let i = 0; i < n; i++) dot += z[a + i] * z[b + i];
+      if (dot >= maxCorr) { admit = false; break; }
+    }
+    if (admit) keep.push(c);
+  }
+  return keep;
+}
+
+// ------------------------------------------------------------- schedule
+function addMonths(d, m) {
+  const x = new Date(d.getTime());
+  const day = x.getDate();
+  x.setMonth(x.getMonth() + m);
+  if (x.getDate() < day) x.setDate(0);          // clamp 31 Jan + 1 month
+  return x;
+}
+function lowerBound(dates, t) {
+  let lo = 0, hi = dates.length;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (dates[mid] < t) lo = mid + 1; else hi = mid; }
+  return lo;
+}
+function upperBound(dates, t) {
+  let lo = 0, hi = dates.length;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (dates[mid] <= t) lo = mid + 1; else hi = mid; }
+  return lo;
+}
+
+function schedule(dates, firstOS, L, step, anchored) {
+  const last = dates[dates.length - 1];
+  const maxEnd = addMonths(last, -step);
+  const start0 = addMonths(firstOS, -L);
+  const out = [];
+  let end = firstOS;
+  while (end <= maxEnd) {
+    out.push([anchored ? start0 : addMonths(end, -L), end]);
+    end = addMonths(end, step);
+    if (out.length > 400) break;
+  }
+  return out;
+}
+
+// ------------------------------------------------------------- one run
+function runConstruction(D, cfg, cache) {
+  const { R, V, T, k, dates } = D;
+  const met = METRICS[cfg.metric];
+  const slices = schedule(dates, cfg.firstOS, cfg.L, cfg.step, cfg.anchored);
+
+  const legs = [];              // [firstIndex, Float64Array] of OOS returns
+  const legsT = [];
+  const picks = [];
+
+  for (const [ws, we] of slices) {
+    const i0 = lowerBound(dates, ws), i1 = upperBound(dates, we);
+    if (i1 - i0 < 30) continue;
+
+    const key = cfg.metric + "|" + i0 + "|" + i1;
+    let vals = cache.get(key);
+    if (vals === undefined) { vals = met.fn(R, T, k, i0, i1); cache.set(key, vals); }
+
+    const short = topN(vals, cfg.topN, met.asc);
+    const z = standardizeSubset(R, T, short, i0, i1);
+    const rel = greedyUncorrelated(z, i1 - i0, short.length, cfg.maxCorr, cfg.maxCols);
+    const chosen = rel.map(r => short[r]);
+    if (!chosen.length) continue;
+
+    // OOS: strictly after the in-sample window closes
+    const os = new Date(we.getTime() + 86400000);
+    const oe = addMonths(we, cfg.step);
+    const j0 = lowerBound(dates, os), j1 = upperBound(dates, oe);
+    if (j1 <= j0) continue;
+
+    const n = j1 - j0, r = new Float64Array(n), tv = new Float64Array(n);
+    const inv = 1 / chosen.length;
+    for (const c of chosen) {
+      const o = c * T;
+      for (let i = 0; i < n; i++) { r[i] += R[o + j0 + i] * inv; tv[i] += V[o + j0 + i] * inv; }
+    }
+    legs.push([j0, r]); legsT.push(tv);
+    picks.push({ ws, we, names: chosen.map(c => D.names[c]) });
+  }
+
+  if (!legs.length) return null;
+
+  // stitch, de-duplicating overlapping timestamps
+  const seen = new Uint8Array(T);
+  const path = [], idxs = [];
+  let sumR = 0, sumT = 0, s = 0, s2 = 0, n = 0;
+  for (let L = 0; L < legs.length; L++) {
+    const [j0, r] = legs[L], tv = legsT[L];
+    for (let i = 0; i < r.length; i++) {
+      const g = j0 + i;
+      if (seen[g]) continue;
+      seen[g] = 1;
+      path.push(r[i]); idxs.push(g);
+      sumR += r[i]; sumT += tv[i];
+      const d = r[i] - s; s += d / (++n); s2 += d * (r[i] - s);
+    }
+  }
+  const sd = Math.sqrt(s2 / n);
+  let comp = 1;
+  for (const x of path) comp *= 1 + x;
+
+  return {
+    sharpe: sd > 1e-15 ? (s / sd) * Math.sqrt(cfg.barsPerYear) : 0,
+    ret_compounded: comp - 1,
+    ret_additive: sumR,
+    avg_trade: sumT > 1e-12 ? sumR / sumT : NaN,
+    n_folds: legs.length,
+    path, idxs, picks,
+  };
+}
+
+// ------------------------------------------------------------- driver
+self.onmessage = (e) => {
+  const msg = e.data;
+  try {
+    if (msg.cmd === "load") {
+      const src = msg.source === "csv"
+        ? parseCSV(msg.text)
+        : (() => {
+            const n = 9000, prices = syntheticPrices(n, msg.seed || 7);
+            const dates = [], d0 = new Date(Date.UTC(1990, 0, 1));
+            for (let i = 0, d = new Date(d0); dates.length < n; i++) {
+              d = new Date(d0.getTime() + i * 86400000);
+              const w = d.getUTCDay();
+              if (w !== 0 && w !== 6) dates.push(d);
+            }
+            return { dates, prices };
+          })();
+
+      const spanYears = (src.dates[src.dates.length - 1] - src.dates[0]) / (365.25 * 864e5);
+      const barsPerYear = spanYears > 0 ? (src.dates.length - 1) / spanYears : 252;
+      self.postMessage({
+        type: "loaded",
+        n: src.dates.length,
+        from: src.dates[0].toISOString().slice(0, 10),
+        to: src.dates[src.dates.length - 1].toISOString().slice(0, 10),
+        barsPerYear,
+        prices: src.prices.buffer,
+        dates: src.dates.map(d => d.getTime()),
+      }, [src.prices.buffer]);
+      return;
+    }
+
+    if (msg.cmd === "run") {
+      const dates = msg.dates.map(t => new Date(t));
+      const prices = new Float64Array(msg.prices);
+      const barsPerYear = msg.barsPerYear;
+
+      self.postMessage({ type: "stage", text: "costruisco i candidati…" });
+      const D = buildCandidates(prices, msg.costBps, msg.volTarget, barsPerYear);
+      D.dates = dates;
+
+      const firstOS = new Date(msg.firstOS);
+      const cfgs = [];
+      for (const L of msg.Ls) for (const step of msg.steps) for (const anchored of msg.anchors)
+        for (const metric of msg.metrics) for (const maxCorr of msg.corrs) for (const maxCols of msg.colsList)
+          cfgs.push({ L, step, anchored, metric, maxCorr, maxCols, topN: msg.topN, firstOS, barsPerYear });
+
+      self.postMessage({ type: "stage", text: `eseguo ${cfgs.length} costruzioni…`, total: cfgs.length });
+
+      const cache = new Map();
+      const rows = [], paths = [];
+      let done = 0, hits = 0;
+      const t0 = performance.now();
+
+      for (const c of cfgs) {
+        const before = cache.size;
+        const res = runConstruction(D, c, cache);
+        if (cache.size === before) hits++;
+        done++;
+        if (res) {
+          rows.push({
+            key: `${c.metric}_L${c.L}_S${c.step}_C${c.maxCorr}_K${c.maxCols}_${c.anchored ? "exp" : "roll"}`,
+            metric: c.metric, L: c.L, step: c.step, anchored: c.anchored,
+            maxCorr: c.maxCorr, maxCols: c.maxCols,
+            sharpe: res.sharpe, ret: res.ret_compounded, avg_trade: res.avg_trade,
+            folds: res.n_folds,
+          });
+          paths.push({ idxs: res.idxs, path: res.path });
+        }
+        if (done % 8 === 0 || done === cfgs.length) {
+          self.postMessage({ type: "progress", done, total: cfgs.length });
+        }
+      }
+
+      if (!rows.length) throw new Error("Nessuna costruzione ha prodotto un risultato: prova una data di primo OOS più vicina all'inizio dei dati, o una finestra IS più corta.");
+
+      // resample every path onto a common 130-point grid of cumulative return
+      const P = 130, lo = Math.min(...paths.map(p => p.idxs[0]));
+      const hi = Math.max(...paths.map(p => p.idxs[p.idxs.length - 1]));
+      const curves = paths.map(p => {
+        const cum = new Float64Array(D.T).fill(NaN);
+        let acc = 0, ptr = 0;
+        for (let g = lo; g <= hi; g++) {
+          if (ptr < p.idxs.length && p.idxs[ptr] === g) { acc += p.path[ptr]; ptr++; }
+          cum[g] = acc;
+        }
+        const out = new Float64Array(P);
+        for (let q = 0; q < P; q++) out[q] = cum[lo + Math.round(q * (hi - lo) / (P - 1))];
+        return Array.from(out);
+      });
+      const axis = [];
+      for (let q = 0; q < P; q++) axis.push(dates[lo + Math.round(q * (hi - lo) / (P - 1))].getTime());
+
+      self.postMessage({
+        type: "done",
+        rows, curves, axis,
+        nCandidates: D.k,
+        elapsed: (performance.now() - t0) / 1000,
+        cacheEntries: cache.size,
+      });
+    }
+  } catch (err) {
+    self.postMessage({ type: "error", text: err && err.message ? err.message : String(err) });
+  }
+};
+
+</script>
+<script>
+(function () {
+  "use strict";
+
+  const $ = (id) => document.getElementById(id);
+  const tok = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const fmt = (x, d = 2) => (x === null || x === undefined || !isFinite(x)) ? "—"
+    : (x >= 0 ? "+" : "") + x.toFixed(d);
+  // "0%" for 2 constructions out of 432 is a rounding lie; keep a decimal
+  // until the number is large enough that the decimal stops mattering.
+  const pct = (f) => (f > 0 && f < 0.1) || (f < 1 && f > 0.9)
+    ? (f * 100).toFixed(1) + "%" : (f * 100).toFixed(0) + "%";
+
+  // ------------------------------------------------------- worker
+  const worker = new Worker(URL.createObjectURL(
+    new Blob([document.getElementById("workerSrc").textContent], { type: "text/javascript" })
+  ));
+
+  let DATA = null;      // {prices, dates, barsPerYear}
+  let RESULT = null;
+  let view = "ret";     // "ret" | "dev"
+
+  // ------------------------------------------------------- controls
+  function multi(name) {
+    const host = document.querySelector(`[data-multi="${name}"]`);
+    return Array.from(host.querySelectorAll(".chip"))
+      .filter(b => b.getAttribute("aria-pressed") === "true")
+      .map(b => b.dataset.v);
+  }
+  function single(name) {
+    const host = document.querySelector(`[data-single="${name}"]`);
+    const on = host.querySelector('.chip[aria-pressed="true"]');
+    return on ? on.dataset.v : host.querySelector(".chip").dataset.v;
+  }
+  function gridSize() {
+    const n = ["Ls", "steps", "anchors", "metrics", "corrs", "colsList"]
+      .reduce((a, k) => a * Math.max(0, multi(k).length), 1);
+    $("gridSize").textContent = n.toLocaleString("it-IT");
+    $("runBtn").disabled = n === 0 || !DATA;
+    return n;
+  }
+
+  document.querySelectorAll("[data-multi] .chip").forEach(b => {
+    b.addEventListener("click", () => {
+      b.setAttribute("aria-pressed", b.getAttribute("aria-pressed") === "true" ? "false" : "true");
+      gridSize();
+    });
+  });
+  document.querySelectorAll("[data-single] .chip").forEach(b => {
+    b.addEventListener("click", () => {
+      b.parentElement.querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed", "false"));
+      b.setAttribute("aria-pressed", "true");
+    });
+  });
+
+  // ------------------------------------------------------- data source
+  function setSource(which) {
+    $("srcDemo").setAttribute("aria-pressed", String(which === "demo"));
+    $("srcCsv").setAttribute("aria-pressed", String(which === "csv"));
+    $("drop").classList.toggle("hidden", which !== "csv");
+    if (which === "demo") loadDemo();
+  }
+  $("srcDemo").addEventListener("click", () => setSource("demo"));
+  $("srcCsv").addEventListener("click", () => setSource("csv"));
+
+  function loadDemo() {
+    $("dataInfo").textContent = "genero la serie…";
+    worker.postMessage({ cmd: "load", source: "demo", seed: 7 });
+  }
+
+  const drop = $("drop"), fileInput = $("fileInput");
+  drop.addEventListener("click", () => fileInput.click());
+  drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("over"); });
+  drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+  drop.addEventListener("drop", e => {
+    e.preventDefault(); drop.classList.remove("over");
+    if (e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener("change", () => { if (fileInput.files[0]) readFile(fileInput.files[0]); });
+
+  function readFile(f) {
+    $("dataInfo").textContent = `leggo ${f.name}…`;
+    const r = new FileReader();
+    r.onload = () => worker.postMessage({ cmd: "load", source: "csv", text: r.result });
+    r.onerror = () => { $("dataInfo").textContent = "Non riesco a leggere il file."; };
+    r.readAsText(f);
+  }
+
+  // ------------------------------------------------------- run
+  $("runBtn").addEventListener("click", () => {
+    if (!DATA) return;
+    $("runBtn").disabled = true;
+    $("prog").classList.remove("hidden");
+    $("pbar").style.width = "0%";
+    const prices = DATA.prices.slice();          // keep our copy, transfer a clone
+    worker.postMessage({
+      cmd: "run",
+      prices: prices.buffer, dates: DATA.dates, barsPerYear: DATA.barsPerYear,
+      firstOS: $("firstOS").value,
+      Ls: multi("Ls").map(Number),
+      steps: multi("steps").map(Number),
+      anchors: multi("anchors").map(v => v === "1"),
+      metrics: multi("metrics"),
+      corrs: multi("corrs").map(Number),
+      colsList: multi("colsList").map(Number),
+      topN: 20,
+      costBps: Number(single("costBps")),
+      volTarget: 0.10,
+    }, [prices.buffer]);
+  });
+
+  worker.onmessage = (e) => {
+    const m = e.data;
+    if (m.type === "loaded") {
+      DATA = { prices: new Float64Array(m.prices), dates: m.dates, barsPerYear: m.barsPerYear };
+      $("dataInfo").innerHTML =
+        `<b>${m.n.toLocaleString("it-IT")}</b> barre &middot; <b>${m.from}</b> → <b>${m.to}</b><br>` +
+        `frequenza misurata: <b>${m.barsPerYear.toFixed(0)}</b> barre/anno`;
+      // default first OOS at 60% through the sample
+      const t = new Date(m.dates[Math.floor(m.dates.length * 0.6)]);
+      $("firstOS").value = t.toISOString().slice(0, 10);
+      $("firstOS").min = new Date(m.dates[0]).toISOString().slice(0, 10);
+      $("firstOS").max = new Date(m.dates[m.dates.length - 1]).toISOString().slice(0, 10);
+      gridSize();
+    } else if (m.type === "stage") {
+      $("stageMsg").textContent = m.text;
+    } else if (m.type === "progress") {
+      $("pbar").style.width = (100 * m.done / m.total).toFixed(1) + "%";
+      $("stageMsg").textContent = `${m.done} / ${m.total}`;
+    } else if (m.type === "done") {
+      $("prog").classList.add("hidden");
+      $("runBtn").disabled = false;
+      $("stageMsg").textContent = `${m.rows.length} costruzioni in ${m.elapsed.toFixed(1)}s`;
+      RESULT = m;
+      render();
+    } else if (m.type === "error") {
+      $("prog").classList.add("hidden");
+      $("runBtn").disabled = false;
+      $("stageMsg").textContent = "";
+      $("dataInfo").textContent = m.text;
+      alertish(m.text);
+    }
+  };
+
+  function alertish(text) {
+    const v = $("verdict");
+    $("results").classList.remove("hidden");
+    $("empty").classList.add("hidden");
+    v.className = "verdict loose";
+    $("vmark").textContent = "Errore";
+    $("vtext").textContent = text;
+    ["stats", "axes"].forEach(id => $(id).innerHTML = "");
+  }
+
+  // ------------------------------------------------------- render
+  function quantile(sorted, q) {
+    const pos = (sorted.length - 1) * q, lo = Math.floor(pos), hi = Math.ceil(pos);
+    return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
+  }
+
+  function render() {
+    const rows = RESULT.rows;
+    const sh = rows.map(r => r.sharpe).slice().sort((a, b) => a - b);
+    const med = quantile(sh, .5), q1 = quantile(sh, .25), q3 = quantile(sh, .75);
+    const min = sh[0], max = sh[sh.length - 1];
+    const mean = sh.reduce((a, b) => a + b, 0) / sh.length;
+    const sd = Math.sqrt(sh.reduce((a, b) => a + (b - mean) ** 2, 0) / (sh.length - 1 || 1));
+    const pos = sh.filter(x => x > 0).length / sh.length;
+    const delta = max - med;
+    const prec = Math.max(...[med, max, delta].map(Math.abs)) < 0.1 ? 3 : 2;
+
+    $("results").classList.remove("hidden");
+    $("empty").classList.add("hidden");
+
+    // ---- verdict: the shape, not the level
+    const tight = pos >= 0.9 && delta <= 0.25 && med > 0;
+    const v = $("verdict");
+    v.className = "verdict " + (tight ? "tight" : "loose");
+    $("vmark").textContent = tight ? "FASCIO COMPATTO" : "FASCIO DISPERSO";
+    $("vtext").innerHTML = tight
+      ? `Il <b>${pct(pos)}</b> delle costruzioni è positivo e la migliore batte la mediana di appena <b>${delta.toFixed(prec)}</b>. Il risultato non dipende da quale costruzione hai scelto: c'è poco da scegliere. Questa è la forma di un edge che regge.`
+      : `La migliore costruzione batte la mediana di <b>${delta.toFixed(prec)}</b> di Sharpe, e solo lo <b>${pct(pos)}</b> delle costruzioni è positivo. Riportare la curva migliore significherebbe riportare <b>${max.toFixed(2)}</b> quando il valore difendibile è <b>${med.toFixed(2)}</b>. Sospetto.`;
+
+    // ---- stats
+    $("stats").innerHTML = [
+      ["Mediana", fmt(med, prec), "il numero difendibile", med > 0 ? "ok" : "hi"],
+      ["Migliore", fmt(max, prec), "quello che riporteresti", "hi"],
+      ["Migliore − mediana", fmt(delta, prec), "quanto compra scegliere dopo", "hi"],
+      ["Dispersione", sd.toFixed(2), "sd sulla griglia", "bl"],
+      ["Positive", pct(pos), `${rows.length} costruzioni`, "bl"],
+      ["Intervallo", `${min.toFixed(2)} … ${max.toFixed(2)}`, "min e max", ""],
+    ].map(([k, val, n, cls]) =>
+      `<div class="st ${cls}"><span class="k">${k}</span><span class="v">${val}</span><span class="n">${n}</span></div>`
+    ).join("");
+
+    drawFan(); drawHist(sh, med); drawAxes(rows, med); drawTable(rows);
+  }
+
+  // ---- the fan
+  function drawFan() {
+    const c = $("fan"), g = c.getContext("2d");
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    const w = c.clientWidth || 820, h = Math.max(280, Math.min(430, w * 0.42));
+    c.width = w * dpr; c.height = h * dpr; c.style.height = h + "px";
+    g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+
+    const curves = RESULT.curves, axis = RESULT.axis, P = curves[0].length;
+    const finals = curves.map(cv => cv[P - 1]);
+    const order = finals.map((v, i) => i).sort((a, b) => finals[a] - finals[b]);
+    const medI = order[Math.floor(order.length / 2)], bestI = order[order.length - 1];
+
+    // "dev" view: deviation from the median path, in multiples of its level.
+    // Sensitivity is a ratio — a bundle that compounds more is wider in raw
+    // percentage points without being any less stable.
+    let series = curves, medLine = curves[medI];
+    if (view === "dev") {
+      const scale = Math.max(1e-6, Math.abs(medLine[P - 1]));
+      series = curves.map(cv => cv.map((x, q) => (x - medLine[q]) / scale));
+      medLine = series[medI];
+    }
+
+    let lo = Infinity, hi = -Infinity;
+    for (const s of series) for (const x of s) { if (x < lo) lo = x; if (x > hi) hi = x; }
+    const pad = (hi - lo) * 0.06 || 0.1; lo -= pad; hi += pad;
+
+    const L = 52, R = 12, Tp = 12, B = 26, pw = w - L - R, ph = h - Tp - B;
+    const X = q => L + pw * q / (P - 1);
+    const Y = v => Tp + ph * (1 - (v - lo) / (hi - lo));
+
+    g.strokeStyle = tok("--line"); g.lineWidth = 1;
+    g.beginPath(); g.moveTo(L, Y(0) + .5); g.lineTo(w - R, Y(0) + .5); g.stroke();
+    g.fillStyle = tok("--faint"); g.font = '10px "JetBrains Mono", monospace';
+    g.textAlign = "right";
+    const unit = view === "dev" ? "×" : "%";
+    for (const val of [hi - pad, 0, lo + pad]) {
+      g.fillText((view === "dev" ? val.toFixed(1) : (val * 100).toFixed(0)) + unit, L - 7, Y(val) + 3);
+    }
+    g.textAlign = "left";
+    g.fillText(new Date(axis[0]).toISOString().slice(0, 7), L, h - 8);
+    g.textAlign = "right";
+    g.fillText(new Date(axis[P - 1]).toISOString().slice(0, 7), w - R, h - 8);
+
+    const line = (s, col, lw) => {
+      g.beginPath();
+      for (let q = 0; q < P; q++) { const x = X(q), y = Y(s[q]); q ? g.lineTo(x, y) : g.moveTo(x, y); }
+      g.strokeStyle = col; g.lineWidth = lw; g.lineJoin = "round"; g.stroke();
+    };
+    const faint = tok("--mass");
+    for (let i = 0; i < series.length; i++) { if (i !== medI && i !== bestI) line(series[i], faint, 1); }
+    line(medLine, tok("--blue"), 2);
+    line(series[bestI], tok("--orange"), 2);
+  }
+
+  // ---- the sharpe distribution
+  function drawHist(sorted, med) {
+    const c = $("hist"), g = c.getContext("2d");
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    const w = c.clientWidth || 820, h = 170;
+    c.width = w * dpr; c.height = h * dpr; c.style.height = h + "px";
+    g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+
+    const lo = Math.min(sorted[0], 0), hi = Math.max(sorted[sorted.length - 1], 0);
+    const span = (hi - lo) || 1, nb = 34, bins = new Array(nb).fill(0);
+    for (const v of sorted) bins[Math.min(nb - 1, Math.floor((v - lo) / span * nb))]++;
+    const peak = Math.max(...bins);
+
+    const L = 40, R = 12, Tp = 10, B = 24, pw = w - L - R, ph = h - Tp - B;
+    const bw = pw / nb;
+    for (let i = 0; i < nb; i++) {
+      const centre = lo + (i + .5) / nb * span;
+      const bh = ph * bins[i] / peak;
+      g.fillStyle = centre >= 0 ? tok("--blue") : tok("--orange");
+      g.globalAlpha = .75;
+      g.fillRect(L + i * bw + .5, Tp + ph - bh, Math.max(1, bw - 1.5), bh);
+    }
+    g.globalAlpha = 1;
+
+    const X = v => L + pw * (v - lo) / span;
+    g.strokeStyle = tok("--line-2"); g.lineWidth = 1;
+    g.beginPath(); g.moveTo(L, Tp + ph + .5); g.lineTo(w - R, Tp + ph + .5); g.stroke();
+    if (lo < 0 && hi > 0) {
+      g.strokeStyle = tok("--faint"); g.setLineDash([3, 3]);
+      g.beginPath(); g.moveTo(X(0), Tp); g.lineTo(X(0), Tp + ph); g.stroke(); g.setLineDash([]);
+    }
+    g.strokeStyle = tok("--text"); g.lineWidth = 1.6;
+    g.beginPath(); g.moveTo(X(med), Tp); g.lineTo(X(med), Tp + ph); g.stroke();
+    g.fillStyle = tok("--text"); g.font = '10px "JetBrains Mono", monospace';
+    g.textAlign = "center"; g.fillText("mediana " + fmt(med), X(med), Tp + 9);
+    g.fillStyle = tok("--faint"); g.textAlign = "left";
+    g.fillText(sorted[0].toFixed(2), L, h - 7);
+    g.textAlign = "right"; g.fillText(sorted[sorted.length - 1].toFixed(2), w - R, h - 7);
+  }
+
+  // ---- marginal effect of each axis
+  function drawAxes(rows, med) {
+    const defs = [
+      ["finestra IS (mesi)", r => r.L],
+      ["cadenza (mesi)", r => r.step],
+      ["tipo di finestra", r => r.anchored ? "espansiva" : "rolling"],
+      ["metrica", r => r.metric],
+      ["tetto correlazione", r => r.maxCorr],
+      ["quanti schierati", r => r.maxCols],
+    ];
+    const html = defs.map(([label, key]) => {
+      const groups = new Map();
+      rows.forEach(r => {
+        const k = key(r);
+        if (!groups.has(k)) groups.set(k, []);
+        groups.get(k).push(r.sharpe);
+      });
+      if (groups.size < 2) return "";
+      const meds = Array.from(groups, ([k, arr]) => {
+        arr.sort((a, b) => a - b);
+        return [k, quantile(arr, .5)];
+      }).sort((a, b) => String(a[0]).localeCompare(String(b[0]), undefined, { numeric: true }));
+      const vals = meds.map(m => m[1]);
+      const lo = Math.min(...vals), hi = Math.max(...vals);
+      const spread = hi - lo;
+      // Bar length is position within this axis's own range, so a longer bar
+      // always reads as "better". Scaling by |value| instead would draw the
+      // worst option as the longest bar whenever the medians are negative.
+      const bars = meds.map(([k, v]) => {
+        const w = spread > 1e-9 ? 12 + 88 * (v - lo) / spread : 60;
+        return `<div class="brow"><div class="blab"><b>${k}</b></div>
+         <div class="btrack"><div class="bfill${v < 0 ? " neg" : ""}" style="width:${w.toFixed(1)}%"></div></div>
+         <div class="bval">${fmt(v)}</div></div>`;
+      }).join("");
+      const flag = spread > 0.15 ? '<span class="flag">non è una scelta libera</span>' : "";
+      return `<div class="axbox"><h4>${label}${flag}</h4><div class="bars">${bars}</div></div>`;
+    }).join("");
+    $("axes").innerHTML = html;
+  }
+
+  // ---- the full table
+  let sortKey = "sharpe", sortDir = -1;
+  function drawTable(rows) {
+    const cols = [
+      ["key", "costruzione"], ["metric", "metrica"], ["L", "IS"], ["step", "passo"],
+      ["anchored", "finestra"], ["maxCorr", "corr"], ["maxCols", "n"],
+      ["sharpe", "sharpe"], ["ret", "rendimento"], ["avg_trade", "trade medio"], ["folds", "fold"],
+    ];
+    const t = $("tbl");
+    t.querySelector("thead").innerHTML = "<tr>" + cols.map(([k, l]) =>
+      `<th data-k="${k}">${l}${sortKey === k ? (sortDir < 0 ? " ↓" : " ↑") : ""}</th>`).join("") + "</tr>";
+    const sorted = rows.slice().sort((a, b) => {
+      const x = a[sortKey], y = b[sortKey];
+      return (typeof x === "string" ? x.localeCompare(y) : x - y) * sortDir;
+    });
+    t.querySelector("tbody").innerHTML = sorted.map(r => "<tr>" + cols.map(([k]) => {
+      let v = r[k];
+      if (k === "anchored") v = v ? "espansiva" : "rolling";
+      else if (k === "sharpe") return `<td class="num">${fmt(v)}</td>`;
+      else if (k === "ret") return `<td class="num">${(v * 100).toFixed(1)}%</td>`;
+      else if (k === "avg_trade") return `<td class="num">${isFinite(v) ? (v * 1e4).toFixed(1) + " bp" : "—"}</td>`;
+      else if (typeof v === "number") return `<td class="num">${v}</td>`;
+      return `<td>${v}</td>`;
+    }).join("") + "</tr>").join("");
+    t.querySelectorAll("thead th").forEach(th => th.addEventListener("click", () => {
+      const k = th.dataset.k;
+      if (k === sortKey) sortDir *= -1; else { sortKey = k; sortDir = -1; }
+      drawTable(rows);
+    }));
+  }
+
+  // The viewer mediates saving: a plain <a download> is inert inside the
+  // artifact frame. Resolve the capability once, hide the button when the
+  // view cannot save, and never auto-retry a decline.
+  // Served as an ordinary page, so a plain <a download> works: no host
+  // runtime to ask, nothing to decline, and the file never leaves the tab.
+  function saveText(filename, text) {
+    const url = URL.createObjectURL(new Blob([text], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  $("csvBtn").addEventListener("click", async () => {
+    if (!RESULT) return;
+    const rows = RESULT.rows;
+    const head = Object.keys(rows[0]).join(",");
+    const body = rows.map(r => Object.values(r).map(v =>
+      typeof v === "number" ? (isFinite(v) ? v : "") : v).join(",")).join("\n");
+
+    const btn = $("csvBtn"), label = btn.textContent;
+    btn.disabled = true;
+    try {
+      saveText("walkforward_bundle.csv", head + "\n" + body);
+      btn.textContent = "salvato";
+    } catch (err) {
+      btn.textContent = "non riuscito";
+    } finally {
+      setTimeout(() => { btn.textContent = label; btn.disabled = false; }, 2200);
+    }
+  });
+
+  $("viewToggle").addEventListener("click", () => {
+    view = view === "ret" ? "dev" : "ret";
+    $("viewToggle").textContent = view === "ret" ? "vista: rendimento" : "vista: scarto dalla mediana";
+    drawFan();
+  });
+
+  // ------------------------------------------------------- redraw hooks
+  let rt;
+  addEventListener("resize", () => {
+    clearTimeout(rt);
+    rt = setTimeout(() => { if (RESULT) render(); }, 140);
+  });
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+    setTimeout(() => { if (RESULT) render(); }, 40);
+  });
+  new MutationObserver(() => setTimeout(() => { if (RESULT) render(); }, 40))
+    .observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+  // ------------------------------------------------------- boot
+  setSource("demo");
+  gridSize();
+})();
+
+</script>
+</body></html>
